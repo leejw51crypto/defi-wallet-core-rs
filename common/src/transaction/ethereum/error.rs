@@ -51,6 +51,8 @@ pub enum EthError {
     Eip712Error(#[from] Eip712Error),
     #[error("Json parse error{0}")]
     JsonError(serde_json::Error),
+    #[error("Client Error: {0}")]
+    ClientError(reqwest::Error),
 }
 
 /// EIP-712 related errors

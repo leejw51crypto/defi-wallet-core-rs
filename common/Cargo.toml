@@ -46,6 +46,7 @@ thiserror = "1"
 uniffi = { version = "^0.19", optional = true }
 uniffi_macros = { version = "^0.19", optional = true }
 url = "2"
+once_cell="1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 cosmos-sdk-proto = { version = "0.12", default-features = false, features = ["cosmwasm"] }
