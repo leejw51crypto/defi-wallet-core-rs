@@ -2,6 +2,7 @@ use crate::EthError;
 use ethers::providers::{Http, Provider};
 use url::Url;
 
+#[cfg(not(target_arch = "wasm32"))]
 use once_cell::sync::Lazy; // 1.3.1
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::{Arc, Mutex};
