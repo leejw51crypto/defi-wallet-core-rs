@@ -3,6 +3,7 @@ use ethers::providers::{Http, Provider};
 use url::Url;
 
 use once_cell::sync::Lazy; // 1.3.1
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::{Arc, Mutex};
 
 struct HttpClientInfo {
@@ -77,6 +78,7 @@ mod ethereum_provider_tests {
 
     const TEST_AGENTINFO: &str = "testagentinfo";
 
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn test_provider_agentinfo() {
         set_ethers_httpagent(TEST_AGENTINFO).unwrap();
