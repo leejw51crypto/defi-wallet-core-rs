@@ -11,8 +11,7 @@ use defi_wallet_core_common::{
 use serde::{Deserialize, Serialize};
 
 pub struct EthContract {
-    // abi_contract: EthAbiContract,
-    abi_contract: String,
+    abi_contract: EthAbiContract,
 }
 
 #[cxx::bridge(namespace = "org::defi_wallet_core")]
@@ -26,14 +25,15 @@ mod ffi {
     extern "Rust" {
         type EthContract;
 
-        fn new_eth_contract() -> Result<Box<EthContract>>;
+        fn new_eth_contract(abi_contract:String) -> Result<Box<EthContract>>;
         fn test(self: &EthContract) -> Result<String>;
     }
 } // end of ffi
 
-fn new_eth_contract() -> Result<Box<EthContract>> {
+fn new_eth_contract(abi_contract:String) -> Result<Box<EthContract>> {
+    let abi_contract = EthAbiContract::new(&abi_contract)?;
     Ok(Box::new(EthContract {
-        abi_contract: "".into(),
+        abi_contract,
     }))
 }
 
