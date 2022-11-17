@@ -25,20 +25,64 @@ mod ffi {
     extern "Rust" {
         type EthContract;
 
-        fn new_eth_contract(abi_contract:String) -> Result<Box<EthContract>>;
+        fn new_eth_contract(abi_contract: String) -> Result<Box<EthContract>>;
         fn test(self: &EthContract) -> Result<String>;
     }
 } // end of ffi
 
-fn new_eth_contract(abi_contract:String) -> Result<Box<EthContract>> {
+fn new_eth_contract(abi_contract: String) -> Result<Box<EthContract>> {
     let abi_contract = EthAbiContract::new(&abi_contract)?;
-    Ok(Box::new(EthContract {
-        abi_contract,
-    }))
+    Ok(Box::new(EthContract { abi_contract }))
 }
 
 impl EthContract {
     fn test(&self) -> Result<String> {
         Ok("apple".into())
+    }
+    fn add_address(&self, address_str: &str) -> Result<()> {
+        Ok(())
+    }
+    fn add_fixed_bytes(bytes: Vec<u8>) -> Result<()> {
+        Ok(())
+    }
+
+    fn add_bytes(bytes: Vec<u8>) -> Result<()> {
+        Ok(())
+    }
+    fn add_int(int_str: &str) -> Result<()> {
+        Ok(())
+    }
+
+    fn add_uint(uint_str: &str) -> Result<()> {
+        Ok(())
+    }
+
+    fn add_bool(value: bool) -> Result<()> {
+        Ok(())
+    }
+
+    fn add_string(value: String) -> Result<()> {
+        Ok(())
+    }
+
+    fn begin_fixed_array() -> Result<()> {
+        Ok(())
+    }
+
+    fn add_fixed_array() -> Result<()> {
+        Ok(())
+    }
+
+    fn begin_array(&self) -> Result<()> {
+        Ok(())
+    }
+    fn add_array(&self) -> Result<()> {
+        Ok(())
+    }
+    fn begin_tuple(&self) -> Result<()> {
+        Ok(())
+    }
+    fn add_tuple(&self) -> Result<()> {
+        Ok(())
     }
 }
