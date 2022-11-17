@@ -288,7 +288,7 @@ impl TryFrom<&EthAbiParamType> for ParamType {
 }
 
 /// Ethereum ABI token
-#[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum EthAbiToken {
     Address(H160),
     FixedBytes(Vec<u8>),

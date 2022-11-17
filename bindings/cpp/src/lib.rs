@@ -18,6 +18,8 @@ mod contract;
 
 mod uint;
 
+mod ethereum;
+
 /// Wrapper of `CosmosSDKMsg`
 ///
 /// For now, types used as extern Rust types are required to be defined by the same crate that
