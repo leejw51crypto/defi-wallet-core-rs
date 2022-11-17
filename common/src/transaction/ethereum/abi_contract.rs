@@ -63,6 +63,20 @@ impl EthAbiContract {
         })
     }
 
+    pub fn decode_input(&self, function_name: &str, data: &[u8]) -> Result<String, EthError> {
+        let function = self.contract.function(function_name)?;
+        let tokens = function.decode_input(data)?;
+        let json = serde_json::to_string(&tokens).map_err(EthError::JsonError)?;
+        Ok(json)
+    }
+
+    pub fn decode_output(&self, function_name: &str, data: &[u8]) -> Result<String, EthError> {
+        let function = self.contract.function(function_name)?;
+        let tokens = function.decode_output(data)?;
+        let json = serde_json::to_string(&tokens).map_err(EthError::JsonError)?;
+        Ok(json)
+    }
+
     /// Encode input data of specified function and arguments. The encoded data
     /// should be set to field data of EthTxInfo when invoking function
     /// build_signed_eth_tx.
