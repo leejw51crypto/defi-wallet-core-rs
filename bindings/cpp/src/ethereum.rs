@@ -24,7 +24,7 @@ pub struct EthContract {
     tokens: Vec<EthAbiToken>,
 
     state: EthContractState,
-    tmptokens: Vec<EthAbiToken>,
+    tmptokens: Option<Vec<EthAbiToken>>,
 }
 
 #[cxx::bridge(namespace = "org::defi_wallet_core")]
@@ -45,9 +45,14 @@ mod ffi {
 
 fn new_eth_contract(abi_contract: String) -> Result<Box<EthContract>> {
     let abi_contract = EthAbiContract::new(&abi_contract)?;
-    let state=EthContractState::VALUE;
-    let tmptokens=Vec::new();
-    Ok(Box::new(EthContract { abi_contract , tokens: vec![],state , tmptokens}))
+    let state = EthContractState::VALUE;
+    let tmptokens = None;
+    Ok(Box::new(EthContract {
+        abi_contract,
+        tokens: vec![],
+        state,
+        tmptokens,
+    }))
 }
 
 impl EthContract {
@@ -56,135 +61,158 @@ impl EthContract {
     }
     fn add_address(&mut self, address_str: &str) -> Result<()> {
         let token = EthAbiToken::from_address_str(address_str)?;
-        if self.state == EthContractState::VALUE{
+        if self.state == EthContractState::VALUE {
             self.tokens.push(token);
-        }
-        else{
-            self.tmptokens.push(token);
+        } else if let Some(tmptokens) = &mut self.tmptokens {
+            tmptokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
         }
 
         Ok(())
     }
     fn add_fixed_bytes(&mut self, bytes: Vec<u8>) -> Result<()> {
-        let token=EthAbiToken::FixedBytes(bytes);
-        if self.state == EthContractState::VALUE{
+        let token = EthAbiToken::FixedBytes(bytes);
+        if self.state == EthContractState::VALUE {
             self.tokens.push(token);
-        }
-        else{
-            self.tmptokens.push(token);
+        } else if let Some(tmptokens) = &mut self.tmptokens {
+            tmptokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
         }
         Ok(())
     }
 
-    fn add_bytes(&mut self,bytes: Vec<u8>) -> Result<()> {
-        let token=EthAbiToken::Bytes(bytes);
-        if self.state == EthContractState::VALUE{
+    fn add_bytes(&mut self, bytes: Vec<u8>) -> Result<()> {
+        let token = EthAbiToken::Bytes(bytes);
+        if self.state == EthContractState::VALUE {
             self.tokens.push(token);
-        }
-        else{
-            self.tmptokens.push(token);
+        } else if let Some(tmptokens) = &mut self.tmptokens {
+            tmptokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
         }
         Ok(())
     }
-    fn add_int(&mut self,int_str: &str) -> Result<()> {
+    fn add_int(&mut self, int_str: &str) -> Result<()> {
         let token = EthAbiToken::from_int_str(int_str)?;
-        if self.state == EthContractState::VALUE{
+        if self.state == EthContractState::VALUE {
             self.tokens.push(token);
-        }
-        else{
-            self.tmptokens.push(token);
+        } else if let Some(tmptokens) = &mut self.tmptokens {
+            tmptokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
         }
         Ok(())
     }
 
-    fn add_uint(&mut self,uint_str: &str) -> Result<()> {
+    fn add_uint(&mut self, uint_str: &str) -> Result<()> {
         let token = EthAbiToken::from_uint_str(uint_str)?;
-        if self.state == EthContractState::VALUE{
+        if self.state == EthContractState::VALUE {
             self.tokens.push(token);
-        }
-        else{
-            self.tmptokens.push(token);
+        } else if let Some(tmptokens) = &mut self.tmptokens {
+            tmptokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
         }
         Ok(())
     }
 
-    fn add_bool(&mut self,value: bool) -> Result<()> {
+    fn add_bool(&mut self, value: bool) -> Result<()> {
         let token = EthAbiToken::Bool(value);
-        if self.state == EthContractState::VALUE{
+        if self.state == EthContractState::VALUE {
             self.tokens.push(token);
-        }
-        else{
-            self.tmptokens.push(token);
+        } else if let Some(tmptokens) = &mut self.tmptokens {
+            tmptokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
         }
         Ok(())
     }
 
-    fn add_string(&mut self,value: String) -> Result<()> {
-        let token=EthAbiToken::String(value);
-        if self.state == EthContractState::VALUE{
+    fn add_string(&mut self, value: String) -> Result<()> {
+        let token = EthAbiToken::String(value);
+        if self.state == EthContractState::VALUE {
             self.tokens.push(token);
-        }
-        else{
-            self.tmptokens.push(token);
+        } else if let Some(tmptokens) = &mut self.tmptokens {
+            tmptokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
         }
         Ok(())
     }
 
     // fixed array
     fn begin_fixed_array(&mut self) -> Result<()> {
-        self.tmptokens.clear();
-        self.state=EthContractState::FIXED_ARRAY;
+        if self.tmptokens.is_none() {
+            self.tmptokens = Some(Vec::new());
+            self.state = EthContractState::FIXED_ARRAY;
+        } else {
+            return Err(anyhow!("tmptokens is not None"));
+        }
+
         Ok(())
     }
 
     fn commit_fixed_array(&mut self) -> Result<()> {
-        // move self.tokens
-        let mut tokens=Vec::new();
-        std::mem::swap(&mut tokens,&mut self.tokens);
+        if let Some(tmptokens) = self.tmptokens.take() {
+            let mut tokens = tmptokens;
+            let token = EthAbiToken::FixedArray(tokens);
+            self.tokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
+        }
 
-        let token=EthAbiToken::FixedArray(tokens);
-        self.tmptokens.clear();
-        self.tokens.push(token);
         Ok(())
     }
 
     // array
     fn begin_array(&mut self) -> Result<()> {
-        self.tmptokens.clear();
-        self.state=EthContractState::ARRAY;
+        if self.tmptokens.is_none() {
+            self.tmptokens = Some(Vec::new());
+            self.state = EthContractState::ARRAY;
+        } else {
+            return Err(anyhow!("tmptokens is not None"));
+        }
+
         Ok(())
     }
     fn commit_array(&mut self) -> Result<()> {
-        let mut tokens=Vec::new();
-        std::mem::swap(&mut tokens,&mut self.tokens);
+        if let Some(tmptokens) = self.tmptokens.take() {
+            let mut tokens = tmptokens;
+            let token = EthAbiToken::Array(tokens);
+            self.tokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
+        }
 
-        let token=EthAbiToken::Array(tokens);
-        self.tmptokens.clear();
-        self.tokens.push(token);
         Ok(())
     }
 
     // tuple
     fn begin_tuple(&mut self) -> Result<()> {
-        self.tmptokens.clear();
-        self.state=EthContractState::TUPLE;
+        if self.tmptokens.is_none() {
+            self.tmptokens = Some(Vec::new());
+            self.state = EthContractState::TUPLE;
+        } else {
+            return Err(anyhow!("tmptokens is not None"));
+        }
         Ok(())
     }
     fn commit_tuple(&mut self) -> Result<()> {
-        let mut tokens=Vec::new();
-        std::mem::swap(&mut tokens,&mut self.tokens);
-
-        let token=EthAbiToken::Tuple(tokens);
-        self.tmptokens.clear();
-        self.tokens.push(token);
+        if let Some(tmptokens) = self.tmptokens.take() {
+            let mut tokens = tmptokens;
+            let token = EthAbiToken::Tuple(tokens);
+            self.tokens.push(token);
+        } else {
+            return Err(anyhow!("tmptokens is None"));
+        }
         Ok(())
     }
 
-
     pub fn encode(&mut self, function_name: &str) -> Result<Vec<u8>> {
-        let mut tokens=Vec::new();
-        std::mem::swap(&mut tokens,&mut self.tokens);
-
+        let mut tokens = Vec::new();
+        std::mem::swap(&mut tokens, &mut self.tokens);
 
         Ok(self.abi_contract.encode(function_name, tokens)?)
     }
