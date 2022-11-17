@@ -179,4 +179,13 @@ impl EthContract {
         self.tokens.push(token);
         Ok(())
     }
+
+
+    pub fn encode(&mut self, function_name: &str) -> Result<Vec<u8>> {
+        let mut tokens=Vec::new();
+        std::mem::swap(&mut tokens,&mut self.tokens);
+
+
+        Ok(self.abi_contract.encode(function_name, tokens)?)
+    }
 }
