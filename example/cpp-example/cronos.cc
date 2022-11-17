@@ -1,14 +1,42 @@
 #include "sdk/include/defi-wallet-core-cpp/src/contract.rs.h"
 #include "sdk/include/defi-wallet-core-cpp/src/lib.rs.h"
 #include "sdk/include/defi-wallet-core-cpp/src/uint.rs.h"
+#include "sdk/include/defi-wallet-core-cpp/src/ethereum.rs.h"
 #include "sdk/include/rust/cxx.h"
 #include <cassert>
 #include <chrono>
 #include <cstring>
 #include <iostream>
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+
+using namespace std;
+using namespace rust;
+using namespace org::defi_wallet_core;
 
 void test_uint();
 void test_approval();
+
+Box<Wallet> createWallet(String mymnemonics);
+inline String getEnv(String key) {
+  String ret;
+  if (getenv(key.c_str()) != nullptr) {
+    ret = getenv(key.c_str());
+  }
+  return ret;
+}
+
+//  read bytes from char array and create hexstring
+std::string bytes_to_hexstring(const char *bytes, size_t len) {
+  std::ostringstream os;
+  os << std::hex << std::setfill('0');
+  for (size_t i = 0; i < len; ++i) {
+    os << std::setw(2)
+       << static_cast<unsigned int>(static_cast<unsigned char>(bytes[i]));
+  }
+  return os.str();
+}
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> timepoint;
 timepoint measure_time(timepoint t1, std::string label);
@@ -491,6 +519,75 @@ void test_erc20_total_supply() {
                     .legacy();
   U256 total_supply = erc20.total_supply();
   assert(total_supply == u256("100000000000000000000000000000000"));
+}
+
+// sample code for calling smart-contract
+void test_dynamic_api_send() {
+  std::ifstream t("../../common/src/contract/erc721-abi.json");
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  std::string json = buffer.str();
+
+  String mymnemonics = getEnv("MYMNEMONICS");
+  String mycronosrpc = getEnv("MYCRONOSRPC");
+  String mycontract = getEnv("MYCONTRACT721");
+  int mychainid = stoi(getEnv("MYCRONOSCHAINID").c_str());
+  Box<Wallet> mywallet = createWallet(mymnemonics);
+
+  String senderAddress = mywallet->get_eth_address(0);
+  String receiverAddress = mywallet->get_eth_address(2);
+  auto thisNonce = get_eth_nonce(senderAddress.c_str(), mycronosrpc);
+  std::string tokenid;
+  std::cout << "Enter tokenid: ";
+  std::cin >> tokenid;
+
+  Box<EthContract> w = new_eth_contract(json);
+  w->add_address(senderAddress);                     // from
+  w->add_address(receiverAddress);                   // to
+  w->add_uint(tokenid);                              // tokenId
+  Vec<uint8_t> data = w->encode("safeTransferFrom"); // encoded
+  std::string hexstring = bytes_to_hexstring((char *)data.data(), data.size());
+  char hdpath[100];
+  int cointype = 60;
+  int chainid = mychainid; // defined in cronos-devnet.yaml
+  snprintf(hdpath, sizeof(hdpath), "m/44'/%d'/0'/0/0", cointype);
+  Box<PrivateKey> privatekey = mywallet->get_key(hdpath);
+
+  EthTxInfoRaw eth_tx_info = new_eth_tx_info();
+  eth_tx_info.to_address = mycontract;
+  eth_tx_info.nonce = thisNonce;
+  eth_tx_info.amount = "0";
+  eth_tx_info.amount_unit = EthAmount::EthDecimal;
+  eth_tx_info.data = data;
+  eth_tx_info.gas_limit = "219400";
+  eth_tx_info.gas_price = "100000000";
+  eth_tx_info.gas_price_unit = EthAmount::WeiDecimal;
+
+  Vec<uint8_t> signedtx =
+      build_eth_signed_tx(eth_tx_info, chainid, true, *privatekey);
+  String status =
+      broadcast_eth_signed_raw_tx(signedtx, mycronosrpc, 1000).status;
+  cout << "status: " << status << endl;
+}
+
+void test_dynamic_api_call() {
+  std::ifstream t("../../common/src/contract/erc721-abi.json");
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  std::string json = buffer.str();
+
+  String mymnemonics = getEnv("MYMNEMONICS");
+  String mycronosrpc = getEnv("MYCRONOSRPC");
+  String mycontract = getEnv("MYCONTRACT721");
+  std::string tokenid;
+  std::cout << "Enter tokenid: ";
+  std::cin >> tokenid;
+
+  Box<EthContract> w = new_eth_contract(json);
+  w->add_uint(tokenid);                     // tokenId
+  Vec<uint8_t> data = w->encode("ownerOf"); // encoded
+  std::string response = w->call(mycronosrpc, mycontract, "ownerOf").c_str();
+  std::cout << "response: " << response << endl;
 }
 
 void test_cronos_testnet() {
