@@ -17,6 +17,14 @@ using namespace std;
 using namespace rust;
 using namespace org::defi_wallet_core;
 int main(int argc, char *argv[]) {
+  // read file MyErc721.json to string
+  ifstream t("erc721-abi.json");
+  stringstream buffer;
+  buffer << t.rdbuf();
+  std::string json = buffer.str();
+  // print json
+  //cout << json << endl;
+  // create wallet
   /*
   try {
     org::defi_wallet_core::set_cronos_httpagent("cronos-wallet-cpp-example");
@@ -32,7 +40,7 @@ int main(int argc, char *argv[]) {
   }
 
   test_interval();*/
-  Box<EthContract> w = new_eth_contract();
+  Box<EthContract> w = new_eth_contract(json);
   rust::String a=w->test();
   
   cout<<"hello "<<a.c_str()<<endl;
