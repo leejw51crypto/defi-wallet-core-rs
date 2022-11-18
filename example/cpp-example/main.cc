@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   Box<EthContract> w = new_eth_contract(json);
   w->add_address(mySender); // from 
   w->add_address(myReceiver); // to
-  w->add_uint("2"); // tokenId
+  w->add_uint("4"); // tokenId
    Vec<uint8_t> data=w->encode("safeTransferFrom"); // encoded 
   std::string hexstring = bytes_to_hexstring((char *)data.data(), data.size());
   // print data length
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
 
   EthTxInfoRaw eth_tx_info = new_eth_tx_info();
-  eth_tx_info.to_address = myReceiver.c_str();
+  eth_tx_info.to_address = "0x554f71B1fA4C8e1A711333958995456E227D0B23";
   eth_tx_info.nonce = nonce1;
   eth_tx_info.amount = "0";
   eth_tx_info.amount_unit = EthAmount::EthDecimal;
