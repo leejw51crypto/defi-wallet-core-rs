@@ -228,7 +228,15 @@ impl EthContract {
     pub fn encode(&mut self, function_name: &str) -> Result<Vec<u8>> {
         let mut tokens = Vec::new();
         std::mem::swap(&mut tokens, &mut self.tokens);
+        let srcbytes=self.abi_contract.encode(function_name, tokens)?;
+       /* // convert srcbytes to hex string
+        let hexstr = hex::encode(srcbytes);
+        // add 0x prefix to hexstr
+        let hexstr = format!("0x{}", hexstr);
+        // convert string to bytes
+        let bytes = hexstr.as_bytes();
 
-        Ok(self.abi_contract.encode(function_name, tokens)?)
+        Ok(bytes.to_vec())*/
+        Ok(srcbytes)
     }
 }
