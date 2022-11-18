@@ -40,6 +40,21 @@ mod ffi {
 
         fn new_eth_contract(abi_contract: String) -> Result<Box<EthContract>>;
         fn test(self: &EthContract) -> Result<String>;
+        fn add_address(&mut self, address_str: &str) -> Result<()>;
+        fn add_fixed_bytes(&mut self, bytes: Vec<u8>) -> Result<()>;
+        fn add_bytes(&mut self, bytes: Vec<u8>) -> Result<()> ;
+        fn add_int(&mut self, int_str: &str) -> Result<()> ;
+        fn add_uint(&mut self, uint_str: &str) -> Result<()> ;
+        fn add_bool(&mut self, value: bool) -> Result<()> ;
+        fn add_string(&mut self, value: String) -> Result<()>;
+        fn begin_fixed_array(&mut self) -> Result<()> ;
+        fn commit_fixed_array(&mut self) -> Result<()> ;
+        fn begin_array(&mut self) -> Result<()>;
+        fn commit_array(&mut self) -> Result<()> ;
+        fn begin_tuple(&mut self) -> Result<()>;
+        fn commit_tuple(&mut self) -> Result<()>;
+        fn encode(&mut self, function_name: &str) -> Result<Vec<u8>>;
+
     }
 } // end of ffi
 

@@ -41,7 +41,15 @@ int main(int argc, char *argv[]) {
 
   test_interval();*/
   Box<EthContract> w = new_eth_contract(json);
+  w->add_address("0x8c8bdBe9CeE455732525086264a4Bf9Cf821C498"); // from 
+  w->add_address("0x8c8bdBe9CeE455732525086264a4Bf9Cf821C498"); // to
+  w->add_uint("0"); // tokenId
+   Vec<uint8_t> data=w->encode("safeTransferFrom"); // encoded 
+  for (int i = 0; i < data.size(); i++) {
+    cout << hex << (int)data[i] << " ";
+  }
   rust::String a=w->test();
+
   
   cout<<"hello "<<a.c_str()<<endl;
   return 0;
