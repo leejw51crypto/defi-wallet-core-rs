@@ -16,6 +16,15 @@
 using namespace std;
 using namespace rust;
 using namespace org::defi_wallet_core;
+Box<Wallet> createWallet(String mymnemonics);
+inline String getEnv(String key) {
+  String ret;
+  if (getenv(key.c_str()) != nullptr) {
+    ret = getenv(key.c_str());
+  }
+  return ret;
+}
+
 //  read bytes from char array and create hexstring
 std::string bytes_to_hexstring(const char *bytes, size_t len) {
   ostringstream os;
@@ -51,12 +60,36 @@ int main(int argc, char *argv[]) {
     // Use `Assertion failed`, the same as `assert` function
     std::cout << "Assertion failed: " << e.what() << std::endl;
   }
+  // read env MYSENDER to string
+  
 
   test_interval();*/
+
+  
+  
+  String mymnemonics = getEnv("MYMNEMONICS2");
+  String mycronosrpc = getEnv("MYCRONOSRPC2");
+  Box<Wallet> mywallet = createWallet(mymnemonics);
+
+  String  mySender = mywallet->get_eth_address(0);
+  String myReceiver = mywallet->get_eth_address(2);
+  // print mySender
+  cout << "get_eth_nonce  from=" << mySender << endl;
+  // print mycronosrpc
+  cout << "mycronosrpc " << mycronosrpc << endl;
+  auto nonce1 = get_eth_nonce(mySender.c_str(), mycronosrpc);
+
+  
+
+
+  // print mySender
+  cout << "mySender: " << mySender << endl;
+  // print myReceiver
+  cout << "myReceiver: " << myReceiver << endl;
   Box<EthContract> w = new_eth_contract(json);
-  w->add_address("0x8c8bdBe9CeE455732525086264a4Bf9Cf821C498"); // from 
-  w->add_address("0x8c8bdBe9CeE455732525086264a4Bf9Cf821C498"); // to
-  w->add_uint("0"); // tokenId
+  w->add_address(mySender); // from 
+  w->add_address(myReceiver); // to
+  w->add_uint("2"); // tokenId
    Vec<uint8_t> data=w->encode("safeTransferFrom"); // encoded 
   std::string hexstring = bytes_to_hexstring((char *)data.data(), data.size());
   // print data length
