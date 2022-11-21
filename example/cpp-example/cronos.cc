@@ -47,8 +47,13 @@ void cronos_process() {
   cout << myaddress2 << endl;
   eth_tx_info.to_address = myaddress2.c_str();
   eth_tx_info.nonce = nonce1;
-  eth_tx_info.amount = "1";
+  eth_tx_info.amount = "0";
   eth_tx_info.amount_unit = EthAmount::EthDecimal;
+
+  eth_tx_info.gas_limit="219400";
+  eth_tx_info.gas_price="100000000";
+  eth_tx_info.gas_price_unit = EthAmount::WeiDecimal;
+
   begin = measure_time(begin, "new_eth_tx_info");
   Vec<uint8_t> signedtx =
       build_eth_signed_tx(eth_tx_info, chainid, true, *privatekey);
