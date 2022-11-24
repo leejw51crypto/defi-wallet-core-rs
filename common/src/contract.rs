@@ -138,6 +138,24 @@ impl<M: Middleware> DynamicContract<M> {
         println!("after method");
         Ok(method.into())
     }
+
+
+    pub fn function_call2<D: Detokenize>(
+        &self,
+        method_name: &str,
+        params: Vec<EthAbiTokenBind>,
+    ) -> Result<ContractCall<M, D>, EthError> {
+        let tokens = params
+            .iter()
+            .flat_map(EthAbiToken::try_from)
+            .map(|x| Token::try_from(&x))
+            .collect::<Result<Vec<Token>, _>>()?;
+        let method = self
+            .0
+            .method::<_, D>(method_name, Token::Tuple(tokens))
+            .map_err(EthError::DynamicAbiError)?;
+        Ok(method.into())
+    }
 }
 
 /// Wrapper of ContractCall

@@ -3,6 +3,7 @@ use defi_wallet_core_common::contract::ContractCall;
 use defi_wallet_core_common::EthAbiTokenBind;
 use ethers::abi::Detokenize;
 use ethers::abi::Tokenize;
+use defi_wallet_core_common::abi::EthAbiToken::Uint;
 
 use anyhow::Result;
 use ethers::prelude::*;
@@ -41,9 +42,33 @@ impl Detokenize for MyDetokenizer {
     }
 }
 
-// tokio main
 #[tokio::main]
 async fn main() -> Result<()> {
+    let abi_json = std::fs::read_to_string("../common/src/contract/erc721-abi.json")?;
+    let contract_address = std::env::var("MYCONTRACT721")?;
+    let rpc = std::env::var("MYCRONOSRPC")?;
+
+    let client = Provider::<Http>::try_from(rpc)?;
+    let contract= DynamicContract::new(&contract_address, &abi_json, client)?;
+    let params= vec![
+        EthAbiTokenBind::Uint{data:"1".to_string()}
+    ];
+    // json encoding of params
+    let json = serde_json::to_string(&params)?;
+    // print json
+    println!("json: {}", json);
+    let params2: Vec<EthAbiTokenBind> = serde_json::from_str(&json)?;
+    let mycall: ContractCall<_, MyDetokenizer>=contract.function_call2("ownerOf", params2)?;
+    let feedback=mycall.call().await?;
+    println!("mycall ok");
+    // debug print feedback
+    println!("feedback: {:?}", feedback);
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main2() -> Result<()> {
     let abi_json = std::fs::read_to_string("../common/src/contract/erc721-abi.json")?;
     let contract_address = std::env::var("MYCONTRACT721")?;
     let rpc = std::env::var("MYCRONOSRPC")?;
@@ -60,16 +85,6 @@ async fn main() -> Result<()> {
         json:tokensjson,
     };
 
-    
-
-  //  let params  = (U256::from("1"),);
-   // // convert params to serde json
-   // let json = serde_json::to_string(&params)?;
-    //let json ="[Uint(1)]".to_string();
-    // parse Token from json
-    //let tokens: Token = serde_json::from_str(&json)?;
-    // print json
-    // make uint256 Token 
     let tokens = Token::Uint(1.into());
     let json = serde_json::to_string(&tokens)?;
     println!("tokens: {:?}", tokens);
