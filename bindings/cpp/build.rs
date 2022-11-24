@@ -7,7 +7,7 @@ const BRIDGES: &[&str] = &[
 ];
 
 fn main() {
-    CFG.doxygen = true;
+    //   CFG.doxygen = true;
     cxx_build::bridges(BRIDGES)
         .file("src/nft.cc")
         .flag_if_supported("-std=c++11")

@@ -3,7 +3,6 @@
 use crate::node::ethereum::abi::EthAbiToken;
 use crate::EthError;
 use ethers::prelude::abi::{Contract, Token};
-
 /// Ethereum ABI token to ffi bind
 #[derive(Debug, Eq, PartialEq)]
 pub enum EthAbiTokenBind {
@@ -22,6 +21,7 @@ pub enum EthAbiTokenBind {
 impl TryFrom<&EthAbiTokenBind> for EthAbiToken {
     type Error = EthError;
     fn try_from(token: &EthAbiTokenBind) -> Result<Self, Self::Error> {
+        println!("try_from convert token {:?}", token);
         Ok(match token {
             EthAbiTokenBind::Address { data } => EthAbiToken::from_address_str(data.as_str())?,
             EthAbiTokenBind::FixedBytes { data } => EthAbiToken::FixedBytes(data.clone()),
@@ -45,6 +45,49 @@ impl TryFrom<&EthAbiTokenBind> for EthAbiToken {
                     .map(TryInto::try_into)
                     .collect::<Result<_, _>>()?,
             ),
+        })
+    }
+}
+
+impl TryFrom<&EthAbiToken> for EthAbiTokenBind {
+    type Error = EthError;
+    fn try_from(token: &EthAbiToken) -> Result<Self, Self::Error> {
+        println!("~~~~~~~  try_from convert token {:?}", token);
+        // convert H160 address to string
+        
+        Ok(match token {
+            EthAbiToken::Address(data) => EthAbiTokenBind::Address {
+                data: data.to_string(),
+            },
+            EthAbiToken::FixedBytes(data) => EthAbiTokenBind::FixedBytes { data: data.clone() },
+            EthAbiToken::Bytes(data) => EthAbiTokenBind::Bytes { data: data.clone() },
+            EthAbiToken::Int(data) => EthAbiTokenBind::Int {
+                data: data.to_string(),
+            },
+            EthAbiToken::Uint(data) => EthAbiTokenBind::Uint {
+                data: data.to_string(),
+            },
+            EthAbiToken::Bool(data) => EthAbiTokenBind::Bool { data: *data },
+            EthAbiToken::String(data) => EthAbiTokenBind::Str { data: data.clone() },
+            EthAbiToken::FixedArray(data) => EthAbiTokenBind::FixedArray {
+                data: data
+                    .iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+            },
+            EthAbiToken::Array(data) => EthAbiTokenBind::FixedArray {
+                data: data
+                    .iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+            },
+            EthAbiToken::Tuple(data) => EthAbiTokenBind::FixedArray {
+                data: data
+                    .iter()
+                    .map(TryInto::try_into)
+                    .collect::<Result<_, _>>()?,
+            },
+            &EthAbiToken::Struct(_,_) => todo!(),
         })
     }
 }

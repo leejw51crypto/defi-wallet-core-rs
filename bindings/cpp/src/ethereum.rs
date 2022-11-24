@@ -1,11 +1,19 @@
 use anyhow::{anyhow, bail, Result};
+use defi_wallet_core_common::contract::ContractCall;
+use defi_wallet_core_common::contract::DynamicContract;
 use defi_wallet_core_common::node::ethereum::abi::EthAbiToken;
 use defi_wallet_core_common::EthAbiContract;
+use defi_wallet_core_common::EthAbiTokenBind;
 use defi_wallet_core_common::EthError;
+use ethers::abi::InvalidOutputType;
 use ethers::prelude::*;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use ethers::types::Eip1559TransactionRequest;
 use std::str::FromStr;
+use std::convert::TryFrom;
+// use Detokenizer
+use ethers::abi::Detokenize;
+use ethers::abi::Token;
 #[derive(PartialEq, Debug)]
 enum EthContractState {
     Value,
@@ -19,10 +27,26 @@ pub struct EthAbiTokenWrapper {
 }
 pub struct EthContract {
     abi_contract: EthAbiContract,
+    abi_json: String,
     tokens: Vec<EthAbiToken>,
 
     state: EthContractState,
     tmptokens: Option<Vec<EthAbiToken>>,
+}
+
+pub struct MyDetokenizer {
+    json: String,
+}
+impl Detokenize for MyDetokenizer {
+    fn from_tokens(tokens: Vec<Token>) -> std::result::Result<Self, InvalidOutputType>
+    where
+        Self: Sized,
+    {
+        println!("MyDetokenizer::from_tokens {:?}", tokens);
+        let json = serde_json::to_string(&tokens)
+            .map_err(|e| InvalidOutputType(format!("serde json error {:?}", e,)))?;
+        Ok(MyDetokenizer { json })
+    }
 }
 
 #[cxx::bridge(namespace = "org::defi_wallet_core")]
@@ -36,7 +60,7 @@ mod ffi {
     extern "Rust" {
         type EthContract;
 
-        fn new_eth_contract(abi_contract: String) -> Result<Box<EthContract>>;
+        fn new_eth_contract(abi_json: String) -> Result<Box<EthContract>>;
         fn add_address(&mut self, address_str: &str) -> Result<()>;
         fn add_fixed_bytes(&mut self, bytes: Vec<u8>) -> Result<()>;
         fn add_bytes(&mut self, bytes: Vec<u8>) -> Result<()>;
@@ -65,12 +89,13 @@ mod ffi {
     }
 } // end of ffi
 
-fn new_eth_contract(abi_contract: String) -> Result<Box<EthContract>> {
-    let abi_contract = EthAbiContract::new(&abi_contract)?;
+fn new_eth_contract(abi_json: String) -> Result<Box<EthContract>> {
+    let abi_contract = EthAbiContract::new(&abi_json)?;
     let state = EthContractState::Value;
     let tmptokens = None;
     Ok(Box::new(EthContract {
         abi_contract,
+        abi_json,
         tokens: vec![],
         state,
         tmptokens,
@@ -282,16 +307,36 @@ impl EthContract {
         contract_address: &str,
         function_name: &str,
     ) -> Result<String> {
-        let addr = Address::from_str(contract_address)?;
-        let provider = Provider::<Http>::try_from(rpcserver)?;
-        let data = self.tokens.clone();
-        let srcbytes = self.abi_contract.encode(function_name, data)?;
-        let ethbytes = Bytes::from(srcbytes);
-        let tx = Eip1559TransactionRequest::new().data(ethbytes).to(addr);
-        let tx = TypedTransaction::Eip1559(tx);
-        let response: Bytes = provider.call(&tx, None).await?;
-        let jsondata = self.decode_output(function_name, &response)?;
-        Ok(jsondata)
+        let client = Provider::<Http>::try_from(rpcserver)?;
+
+        // print contract address
+        println!("contract_address: {}", contract_address);
+        // print function name
+        println!("function_name: {}", function_name);
+        let mycontract = DynamicContract::new(contract_address, &self.abi_json, client)?;
+
+        let mut params: Vec<EthAbiTokenBind> = vec![];
+        let tokens = self.tokens.clone();
+        // convert tokens to params
+        for token in tokens {
+            // try into
+            let param = EthAbiTokenBind::try_from(&token)?;
+            params.push(param);
+        }
+        // debug print
+        params.iter().for_each(|param| {
+            println!("param: {:?}", param);
+        });
+
+        println!("1~~~~~~~~~~~~");
+        let mycontractcall: ContractCall<_, MyDetokenizer> =
+            mycontract.function_call(function_name, params)?;
+        println!("2~~~~~~~~~~~~~~~~");
+
+        let response: MyDetokenizer =   mycontractcall.call().await?;
+        
+        println!("3~~~~~~~~~~~~~~~~~");
+        Ok(response.json.into())
     }
     pub fn call(
         &mut self,
