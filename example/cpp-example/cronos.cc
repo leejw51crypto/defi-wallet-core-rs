@@ -601,6 +601,7 @@ void test_dynamic_api_recursive_arg() {
   std::string json = buffer.str();
   Box<EthContract> mycontractcall = new_eth_contract(json);
 
+  // [{\"Uint\":{\"data\":\"1\"}}]
   mycontractcall->begin_tuple();
   mycontractcall->add_uint("20");
   mycontractcall->add_uint("30");
