@@ -537,22 +537,29 @@ void test_dynamic_api_send() {
   String senderAddress = mywallet->get_eth_address(0);
   String receiverAddress = mywallet->get_eth_address(2);
   auto thisNonce = get_eth_nonce(senderAddress.c_str(), mycronosrpc);
+  cout << "rpc=" << mycronosrpc << endl;
   std::string tokenid;
   std::cout << "Enter tokenid: ";
   std::cin >> tokenid;
 
   Box<EthContract> w = new_eth_contract(json);
-  w->add_address(senderAddress);                     // from
-  w->add_address(receiverAddress);                   // to
-  w->add_uint(tokenid);                              // tokenId
-  Vec<uint8_t> data = w->encode("safeTransferFrom"); // encoded
-  std::string hexstring = bytes_to_hexstring((char *)data.data(), data.size());
+
+  char tmp[300];
+  memset(tmp, 0, sizeof(tmp));
+  sprintf(tmp,
+          "[{\"Address\":{\"data\":\"%s\"}},{\"Address\":{\"data\":\"%s\"}},{"
+          "\"Uint\":{\"data\":\"%d\"}}]",
+          senderAddress.c_str(), receiverAddress.c_str(), stoi(tokenid));
+  std::cout << tmp << std::endl;
+  std::string paramsjson = tmp;
+  Vec<uint8_t> data; // encoded
+  data = w->encode(mycronosrpc, mycontract, "safeTransferFrom", paramsjson);
+  cout << "data length=" << data.size() << endl;
   char hdpath[100];
   int cointype = 60;
   int chainid = mychainid; // defined in cronos-devnet.yaml
   snprintf(hdpath, sizeof(hdpath), "m/44'/%d'/0'/0/0", cointype);
   Box<PrivateKey> privatekey = mywallet->get_key(hdpath);
-
   EthTxInfoRaw eth_tx_info = new_eth_tx_info();
   eth_tx_info.to_address = mycontract;
   eth_tx_info.nonce = thisNonce;
@@ -565,8 +572,14 @@ void test_dynamic_api_send() {
 
   Vec<uint8_t> signedtx =
       build_eth_signed_tx(eth_tx_info, chainid, true, *privatekey);
-  String status =
-      broadcast_eth_signed_raw_tx(signedtx, mycronosrpc, 1000).status;
+  CronosTransactionReceiptRaw receipt =
+      broadcast_eth_signed_raw_tx(signedtx, mycronosrpc, 1000);
+  String status = receipt.status;
+  Vec<String> logs = receipt.logs;
+  for (auto it = logs.begin(); it != logs.end(); ++it) {
+    cout << *it << endl;
+  }
+
   cout << "status: " << status << endl;
 }
 
@@ -587,43 +600,11 @@ void test_dynamic_api_call() {
   std::cout << "Enter tokenid: ";
   std::cin >> tokenid;
 
-  mycontractcall->add_uint(tokenid);                     // tokenId
-  Vec<uint8_t> data = mycontractcall->encode("ownerOf"); // encoded
+  std::string argjson = "[{\"Uint\":{\"data\":\"1\"}}]";
   std::string response =
-      mycontractcall->call(mycronosrpc, mycontract, "ownerOf").c_str();
+      mycontractcall->call(mycronosrpc, mycontract, "ownerOf", argjson.c_str())
+          .c_str();
   std::cout << "response: " << response << endl;
-}
-
-void test_dynamic_api_recursive_arg() {
-  std::ifstream t("../../common/src/contract/erc721-abi.json");
-  std::stringstream buffer;
-  buffer << t.rdbuf();
-  std::string json = buffer.str();
-  Box<EthContract> mycontractcall = new_eth_contract(json);
-
-  mycontractcall->begin_tuple();
-  mycontractcall->add_uint("20");
-  mycontractcall->add_uint("30");
-  Box<EthAbiTokenWrapper> datatuple = mycontractcall->commit_tuple();
-  mycontractcall->begin_array();
-  mycontractcall->add_uint("200");
-  mycontractcall->add_uint("300");
-  Box<EthAbiTokenWrapper> dataarray = mycontractcall->commit_array();
-
-  mycontractcall->begin_fixed_array();
-  mycontractcall->add_uint("2000");
-  mycontractcall->add_uint("3000");
-  Box<EthAbiTokenWrapper> datafixedarray = mycontractcall->commit_fixed_array();
-
-  mycontractcall->begin_tuple();
-  mycontractcall->add_uint("1");
-  mycontractcall->add_wrapper(datatuple);
-  mycontractcall->add_wrapper(dataarray);
-  mycontractcall->add_wrapper(datafixedarray);
-  mycontractcall->add_uint("2");
-  Box<EthAbiTokenWrapper> finaltuple = mycontractcall->commit_tuple();
-
-  mycontractcall->add_wrapper(finaltuple);
 }
 
 void test_cronos_testnet() {

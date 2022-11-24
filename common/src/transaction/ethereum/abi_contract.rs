@@ -3,9 +3,11 @@
 use crate::node::ethereum::abi::EthAbiToken;
 use crate::EthError;
 use ethers::prelude::abi::{Contract, Token};
-
+use serde::Deserialize;
+use serde::Serialize;
 /// Ethereum ABI token to ffi bind
-#[derive(Debug, Eq, PartialEq)]
+// enable serde serialization
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum EthAbiTokenBind {
     Address { data: String },
     FixedBytes { data: Vec<u8> },
@@ -22,6 +24,7 @@ pub enum EthAbiTokenBind {
 impl TryFrom<&EthAbiTokenBind> for EthAbiToken {
     type Error = EthError;
     fn try_from(token: &EthAbiTokenBind) -> Result<Self, Self::Error> {
+        println!("try_from convert token {:?}", token);
         Ok(match token {
             EthAbiTokenBind::Address { data } => EthAbiToken::from_address_str(data.as_str())?,
             EthAbiTokenBind::FixedBytes { data } => EthAbiToken::FixedBytes(data.clone()),
