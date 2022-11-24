@@ -47,20 +47,12 @@ async fn main() -> Result<()> {
     let abi_json = std::fs::read_to_string("../common/src/contract/erc721-abi.json")?;
     let contract_address = std::env::var("MYCONTRACT721")?;
     let rpc = std::env::var("MYCRONOSRPC")?;
-    let mnemonics = std::env::var("MYMNEMONICS")?;
 
     let client = Provider::<Http>::try_from(rpc)?;
     let contract= DynamicContract::new(&contract_address, &abi_json, client)?;
-
-    //let a="{\"Tuple\":[{\"Uint\":\"0x1\"}]}";
-    //let a="[\"0x1\"]";
-    // decode serde json from a
-    //let tokens: Vec<Token> = serde_json::from_str(a)?;
     let tokens: Vec<Token> = vec![Token::Uint(1.into())];
-    // json tokens
     let tokensjson = serde_json::to_string(&tokens)?;
     let tokens2: Vec<Token>= serde_json::from_str(&tokensjson)?;
-    // debug print tokens
     println!("tokens json: {:?}", tokens);
     println!("tokens2 json: {:?}", tokens2);
 
