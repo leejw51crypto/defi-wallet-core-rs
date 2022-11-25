@@ -1,4 +1,5 @@
 use anyhow::{anyhow, bail, Result};
+use cosmos_sdk_proto::ibc::applications::interchain_accounts::v1::Type;
 use defi_wallet_core_common::contract::ContractCall;
 use defi_wallet_core_common::contract::DynamicContract;
 use defi_wallet_core_common::node::ethereum::abi::EthAbiToken;
@@ -103,7 +104,7 @@ fn new_eth_contract(abi_json: String) -> Result<Box<EthContract>> {
 }
 
 impl EthContract {
-    pub async fn do_call(
+    async fn do_call(
         &mut self,
         rpcserver: &str,
         contract_address: &str,
@@ -131,24 +132,48 @@ impl EthContract {
         rpcserver: &str,
         contract_address: &str,
         function_name: &str,
-        function_args: &str
+        function_args: &str,
     ) -> Result<String> {
         let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
-        let res = rt.block_on(self.do_call(rpcserver, contract_address, function_name,function_args))?;
+        let res =
+            rt.block_on(self.do_call(rpcserver, contract_address, function_name, function_args))?;
         Ok(res)
     }
 
-    fn encode(
+    async fn do_encode(
         &mut self,
         rpcserver: &str,
         contract_address: &str,
         function_name: &str,
         function_args: &str, // json
     ) -> Result<Vec<u8>> {
-        Ok(vec![])
+        let client = Provider::<Http>::try_from(rpcserver)?;
+
+        let mycontract = DynamicContract::new(contract_address, &self.abi_json, client)?;
+        let params: Vec<EthAbiTokenBind> = serde_json::from_str(&function_args)?;
+        let mycontractcall: ContractCall<_, MyDetokenizer> =
+            mycontract.function_call(function_name, params)?;
+
+        let tx:TypedTransaction=mycontractcall.get_tx();
+        let data=tx.data().ok_or_else(|| anyhow!("no data"))?;
+
+        Ok(data.to_vec())
     }
 
-    fn send(
+    pub fn encode(
+        &mut self,
+        rpcserver: &str,
+        contract_address: &str,
+        function_name: &str,
+        function_args: &str, // json
+    ) -> Result<Vec<u8>> {
+        let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
+        let res =
+            rt.block_on(self.do_encode(rpcserver, contract_address, function_name, function_args))?;
+        Ok(res)
+    }
+
+    pub fn send(
         &mut self,
         rpcserver: &str,
         contract_address: &str,

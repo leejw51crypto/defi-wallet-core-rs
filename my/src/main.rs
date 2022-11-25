@@ -51,11 +51,12 @@ async fn main() -> Result<()> {
     let myfromaddress = std::env::var("MYFROMADDRESS")?;
     let mytoaddress = std::env::var("MYTOADDRESS")?;
     // read token id from user
-    let mut token_id:String = "1".into();
+    let mut token_id: String = "1".into();
     //println!("Enter token id:");
-   // std::io::stdin().read_line(&mut token_id)?;
+    // std::io::stdin().read_line(&mut token_id)?;
 
     let client = Provider::<Http>::try_from(rpc)?;
+    // make dummy client
     let contract = DynamicContract::new(&contract_address, &abi_json, client)?;
 
     let params = vec![
@@ -71,10 +72,10 @@ async fn main() -> Result<()> {
     // print json
     println!("json: {}", json);
     //safeTransferFrom , ownerOf
-    let mycall: ContractCall<_, MyDetokenizer> = contract.function_call("safeTransferFrom", params)?;
-    let tx=mycall.get_tx();
+    let mycall: ContractCall<_, MyDetokenizer> =
+        contract.function_call("safeTransferFrom", params)?;
+    let tx = mycall.get_tx();
     println!("tx: {:?}", tx);
-    
 
     Ok(())
 }

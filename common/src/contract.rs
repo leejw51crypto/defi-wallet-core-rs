@@ -4,6 +4,7 @@ use crate::{abi::EthAbiToken, EthAbiTokenBind};
 use ethers::abi::Detokenize;
 #[cfg(feature = "abi-contract")]
 use ethers::abi::Token;
+use ethers::abi::Tokenize;
 use ethers::contract::builders;
 use ethers::prelude::{abigen, Middleware, TransactionReceipt, U256};
 use ethers::types::transaction::eip2718::TypedTransaction;
