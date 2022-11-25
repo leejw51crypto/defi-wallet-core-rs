@@ -46,6 +46,42 @@ impl Detokenize for MyDetokenizer {
 async fn main() -> Result<()> {
     let abi_json = std::fs::read_to_string("../common/src/contract/erc721-abi.json")?;
     let contract_address = std::env::var("MYCONTRACT721")?;
+    let mnemonics = std::env::var("MYMNEMONICS")?;
+    let rpc = std::env::var("MYCRONOSRPC")?;
+    let myfromaddress = std::env::var("MYFROMADDRESS")?;
+    let mytoaddress = std::env::var("MYTOADDRESS")?;
+    // read token id from user
+    let mut token_id:String = "1".into();
+    //println!("Enter token id:");
+   // std::io::stdin().read_line(&mut token_id)?;
+
+    let client = Provider::<Http>::try_from(rpc)?;
+    let contract = DynamicContract::new(&contract_address, &abi_json, client)?;
+
+    let params = vec![
+        EthAbiTokenBind::Address {
+            data: myfromaddress,
+        },
+        EthAbiTokenBind::Address { data: mytoaddress },
+        EthAbiTokenBind::Uint { data: token_id },
+    ];
+
+    let json = serde_json::to_string(&params)?;
+    // [{"Address":{"data":"0x...."}},{"Address":{"data":"0x...."}},{"Uint":{"data":"\\5\n"}}]
+    // print json
+    println!("json: {}", json);
+    //safeTransferFrom , ownerOf
+    let mycall: ContractCall<_, MyDetokenizer> = contract.function_call("safeTransferFrom", params)?;
+    let tx=mycall.get_tx();
+    println!("tx: {:?}", tx);
+    
+
+    Ok(())
+}
+
+async fn test_call() -> Result<()> {
+    let abi_json = std::fs::read_to_string("../common/src/contract/erc721-abi.json")?;
+    let contract_address = std::env::var("MYCONTRACT721")?;
     let rpc = std::env::var("MYCRONOSRPC")?;
 
     let client = Provider::<Http>::try_from(rpc)?;
@@ -61,7 +97,5 @@ async fn main() -> Result<()> {
     let feedback = mycall.call().await?;
     println!("mycall ok");
     println!("feedback: {:?}", feedback);
-
     Ok(())
 }
-
