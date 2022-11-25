@@ -14,7 +14,9 @@
 #include <thread>
 
 void test_dynamic_api_call();
+void test_dynamic_api_send();
 int main(int argc, char *argv[]) {
-  test_dynamic_api_call();
+  //test_dynamic_api_call();
+  test_dynamic_api_send();
   return 0;
 }

@@ -150,7 +150,9 @@ impl EthContract {
         let client = Provider::<Http>::try_from(rpcserver)?;
 
         let mycontract = DynamicContract::new(contract_address, &self.abi_json, client)?;
+        
         let params: Vec<EthAbiTokenBind> = serde_json::from_str(&function_args)?;
+        println!("do_encode params: {:?}", params);
         let mycontractcall: ContractCall<_, MyDetokenizer> =
             mycontract.function_call(function_name, params)?;
 
