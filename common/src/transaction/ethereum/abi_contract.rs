@@ -52,7 +52,6 @@ impl TryFrom<&EthAbiTokenBind> for EthAbiToken {
     }
 }
 
-
 /// Ethereum ABI Contract
 pub struct EthAbiContract {
     contract: Contract,

@@ -2,7 +2,6 @@ use crate::EthError;
 #[cfg(feature = "abi-contract")]
 use crate::{abi::EthAbiToken, EthAbiTokenBind};
 use ethers::abi::Detokenize;
-use ethers::abi::Tokenize;
 #[cfg(feature = "abi-contract")]
 use ethers::abi::Token;
 use ethers::contract::builders;
@@ -123,24 +122,7 @@ impl<M: Middleware> DynamicContract<M> {
     /// # Arguments
     /// * `method_name` - The name of the method to call
     /// * `params` - The arguments to pass to the method (must be in the correct order)
-    pub fn function_call<T:Tokenize, D: Detokenize>(
-        &self,
-        method_name: &str,
-        params: T,
-    ) -> Result<ContractCall<M, D>, EthError> {
-        println!("- function_call: {}", method_name);
-
-        //println!("########   before method {:?} {:?}", method_name, tokens);
-        let method = self
-            .0
-            .method::<_, D>(method_name, params)
-            .map_err(EthError::DynamicAbiError)?;
-        println!("after method");
-        Ok(method.into())
-    }
-
-
-    pub fn function_call2<D: Detokenize>(
+    pub fn function_call<D: Detokenize>(
         &self,
         method_name: &str,
         params: Vec<EthAbiTokenBind>,

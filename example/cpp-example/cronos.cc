@@ -542,10 +542,11 @@ void test_dynamic_api_send() {
   std::cin >> tokenid;
 
   Box<EthContract> w = new_eth_contract(json);
-  w->add_address(senderAddress);                     // from
-  w->add_address(receiverAddress);                   // to
-  w->add_uint(tokenid);                              // tokenId
-  Vec<uint8_t> data = w->encode("safeTransferFrom"); // encoded
+  //w->add_address(senderAddress);                     // from
+ // w->add_address(receiverAddress);                   // to
+ // w->add_uint(tokenid);                              // tokenId
+  //Vec<uint8_t> data = w->encode("safeTransferFrom"); // encoded
+  Vec<uint8_t> data ; // encoded
   std::string hexstring = bytes_to_hexstring((char *)data.data(), data.size());
   char hdpath[100];
   int cointype = 60;
@@ -587,10 +588,9 @@ void test_dynamic_api_call() {
   std::cout << "Enter tokenid: ";
   std::cin >> tokenid;
 
-  mycontractcall->add_uint(tokenid);                     // tokenId
-  Vec<uint8_t> data = mycontractcall->encode("ownerOf"); // encoded
+  std::string argjson="[{\"Uint\":{\"data\":\"1\"}}]";
   std::string response =
-      mycontractcall->call(mycronosrpc, mycontract, "ownerOf").c_str();
+      mycontractcall->call(mycronosrpc, mycontract, "ownerOf", argjson.c_str()).c_str();
   std::cout << "response: " << response << endl;
 }
 
@@ -600,31 +600,9 @@ void test_dynamic_api_recursive_arg() {
   buffer << t.rdbuf();
   std::string json = buffer.str();
   Box<EthContract> mycontractcall = new_eth_contract(json);
+  
 
-  // [{\"Uint\":{\"data\":\"1\"}}]
-  mycontractcall->begin_tuple();
-  mycontractcall->add_uint("20");
-  mycontractcall->add_uint("30");
-  Box<EthAbiTokenWrapper> datatuple = mycontractcall->commit_tuple();
-  mycontractcall->begin_array();
-  mycontractcall->add_uint("200");
-  mycontractcall->add_uint("300");
-  Box<EthAbiTokenWrapper> dataarray = mycontractcall->commit_array();
 
-  mycontractcall->begin_fixed_array();
-  mycontractcall->add_uint("2000");
-  mycontractcall->add_uint("3000");
-  Box<EthAbiTokenWrapper> datafixedarray = mycontractcall->commit_fixed_array();
-
-  mycontractcall->begin_tuple();
-  mycontractcall->add_uint("1");
-  mycontractcall->add_wrapper(datatuple);
-  mycontractcall->add_wrapper(dataarray);
-  mycontractcall->add_wrapper(datafixedarray);
-  mycontractcall->add_uint("2");
-  Box<EthAbiTokenWrapper> finaltuple = mycontractcall->commit_tuple();
-
-  mycontractcall->add_wrapper(finaltuple);
 }
 
 void test_cronos_testnet() {
