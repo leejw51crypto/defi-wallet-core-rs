@@ -557,7 +557,7 @@ void test_dynamic_api_send() {
   // print data length
   cout<<"data length="<<data.size()<<endl;
 
-  std::string hexstring = bytes_to_hexstring((char *)data.data(), data.size());
+  //std::string hexstring = bytes_to_hexstring((char *)data.data(), data.size());
   char hdpath[100];
   int cointype = 60;
   int chainid = mychainid; // defined in cronos-devnet.yaml
@@ -576,8 +576,16 @@ void test_dynamic_api_send() {
 
   Vec<uint8_t> signedtx =
       build_eth_signed_tx(eth_tx_info, chainid, true, *privatekey);
-  String status =
-      broadcast_eth_signed_raw_tx(signedtx, mycronosrpc, 1000).status;
+   CronosTransactionReceiptRaw receipt=
+      broadcast_eth_signed_raw_tx(signedtx, mycronosrpc, 1000);
+  String status= receipt.status;
+  Vec<String> logs = receipt.logs;
+  // print logs
+  // iterate logs
+  for (auto it = logs.begin(); it != logs.end(); ++it) {
+    cout << *it << endl;
+  }
+
   cout << "status: " << status << endl;
 }
 
