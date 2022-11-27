@@ -71,14 +71,7 @@ mod ffi {
             function_args: &str, // json
         ) -> Result<Vec<u8>>;
 
-        fn send(
-            &mut self,
-            rpcserver: &str,
-            contract_address: &str,
-            function_name: &str,
-            function_args: &str, // json
-        ) -> Result<String>;
-
+        
         fn call(
             &mut self,
             rpcserver: &str,
@@ -175,14 +168,5 @@ impl EthContract {
         Ok(res)
     }
 
-    pub fn send(
-        &mut self,
-        rpcserver: &str,
-        contract_address: &str,
-        function_name: &str,
-        function_args: &str, // json
-    ) -> Result<String> //json
-    {
-        Ok("".to_string())
-    }
+
 }
