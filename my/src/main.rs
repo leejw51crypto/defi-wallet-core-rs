@@ -1,3 +1,4 @@
+use ethers::signers::{coins_bip39::English, MnemonicBuilder};
 use defi_wallet_core_common::abi::EthAbiToken::Uint;
 use defi_wallet_core_common::contract::ContractCall;
 use defi_wallet_core_common::contract::DynamicContract;
@@ -43,7 +44,61 @@ impl Detokenize for MyDetokenizer {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() ->Result<()> {
+    let abi_json = std::fs::read_to_string("../common/src/contract/erc721-abi.json")?;
+    let contract_address = std::env::var("MYCONTRACT721")?;
+    let mnemonics = std::env::var("MYMNEMONICS")?;
+    let rpc = std::env::var("MYCRONOSRPC")?;
+    let myfromaddress = std::env::var("MYFROMADDRESS")?;
+    let mytoaddress = std::env::var("MYTOADDRESS")?;
+    let mut token_id: String = "1".into();
+    let client = Provider::<Http>::try_from(rpc)?;
+    // make signer middleware
+    let wallet = MnemonicBuilder::<English>::default()
+    .phrase(mnemonics.as_str())
+    .index(0 as u32)?
+    .build()?;
+
+    let signer = SignerMiddleware::new(client, wallet);
+
+    //let contract = DynamicContract::new(&contract_address, &abi_json, client)?;
+    let contract = DynamicContract::new(&contract_address, &abi_json, signer)?;
+
+    // read tokenid from console
+    let mut input = String::new();
+    println!("Enter tokenid:");
+    std::io::stdin().read_line(&mut input)?;
+    token_id = input.trim().to_string();
+
+   let params = vec![
+        EthAbiTokenBind::Address {
+            data: myfromaddress,
+        },
+        EthAbiTokenBind::Address { data: mytoaddress },
+        EthAbiTokenBind::Uint { data: token_id },
+    ];
+
+    let json = serde_json::to_string(&params)?;
+    println!("json: {}", json);
+    let mycall: ContractCall<_, MyDetokenizer> =
+        contract.function_call("safeTransferFrom", params)?;
+    let mut tx = mycall.get_tx();
+    
+    tx.set_gas("1000000");
+    tx.set_gas_price("210000");
+    tx.set_chain_id("1");
+    println!("tx: {:?}", tx);
+    let sendresult=mycall.send().await?;
+    // print sendresult
+    println!("sendresult: {:?}", sendresult);
+
+    
+    Ok(())
+}
+
+
+
+async fn main_build() -> Result<()> {
     let abi_json = std::fs::read_to_string("../common/src/contract/erc721-abi.json")?;
     let contract_address = std::env::var("MYCONTRACT721")?;
     let mnemonics = std::env::var("MYMNEMONICS")?;
