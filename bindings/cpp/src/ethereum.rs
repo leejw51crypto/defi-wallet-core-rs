@@ -1,3 +1,4 @@
+use crate::PrivateKey;
 use anyhow::{anyhow, Result};
 use defi_wallet_core_common::contract::ContractCall;
 use defi_wallet_core_common::contract::DynamicContract;
@@ -6,7 +7,9 @@ use defi_wallet_core_common::EthError;
 use ethers::abi::Detokenize;
 use ethers::abi::InvalidOutputType;
 use ethers::abi::Token;
+use ethers::core::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
+use ethers::signers::Wallet;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use std::convert::TryFrom;
 
@@ -34,6 +37,12 @@ impl Detokenize for EthDetokenizer {
 #[allow(clippy::too_many_arguments)]
 mod ffi {
 
+    extern "C++" {
+        include!("defi-wallet-core-cpp/src/lib.rs.h");
+        type PrivateKey = crate::PrivateKey;
+        type CronosTransactionReceiptRaw = crate::ffi::CronosTransactionReceiptRaw;
+    }
+
     extern "Rust" {
         type EthContract;
 
@@ -55,6 +64,12 @@ mod ffi {
             function_args: &str, // json
         ) -> Result<String>;
 
+        fn transfer(
+            &self,
+            private_key: &PrivateKey,
+            function_name: &str,
+            function_args: &str, // json
+        ) -> Result<CronosTransactionReceiptRaw>;
     }
 } // end of ffi
 
@@ -113,6 +128,38 @@ impl EthContract {
     ) -> Result<Vec<u8>> {
         let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
         let res = rt.block_on(self.do_encode(function_name, function_args))?;
+        Ok(res)
+    }
+
+    async fn do_trasnfer(
+        &self,
+        private_key: &PrivateKey,
+        function_name: &str,
+        function_args: &str, // json
+    ) -> Result<crate::ffi::CronosTransactionReceiptRaw> {
+        let client = Provider::<Http>::try_from(&self.rpcserver)?;
+        let params: Vec<EthAbiTokenBind> = serde_json::from_str(function_args)?;
+        let signingkey = SigningKey::from_bytes(&private_key.to_bytes())?;
+        let wallet: Wallet<SigningKey> = signingkey.into();
+        let signer = SignerMiddleware::new(client, wallet);
+
+        let ethcontract = DynamicContract::new(&self.contract_address, &self.abi_json, signer)?;
+        let ethcontractcall: ContractCall<_, EthDetokenizer> =
+            ethcontract.function_call(function_name, params)?;
+
+        let ethersreceipt = ethcontractcall.send().await?;
+        let defireceipt: defi_wallet_core_common::TransactionReceipt = ethersreceipt.into();
+        let ret: crate::ffi::CronosTransactionReceiptRaw = defireceipt.into();
+        Ok(ret)
+    }
+    fn transfer(
+        &self,
+        private_key: &PrivateKey,
+        function_name: &str,
+        function_args: &str, // json
+    ) -> Result<crate::ffi::CronosTransactionReceiptRaw> {
+        let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
+        let res = rt.block_on(self.do_trasnfer(private_key, function_name, function_args))?;
         Ok(res)
     }
 }

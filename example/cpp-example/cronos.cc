@@ -590,6 +590,53 @@ void test_dynamic_api_call() {
   std::cout << "response: " << response << endl;
 }
 
+void test_dynamic_api_transfer() {
+  std::ifstream t("../../common/src/contract/erc721-abi.json");
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  std::string json = buffer.str();
+
+  String mymnemonics = getEnv("MYMNEMONICS");
+  String mycronosrpc = getEnv("MYCRONOSRPC");
+  String mycontract = getEnv("MYCONTRACT721");
+  int mychainid = stoi(getEnv("MYCRONOSCHAINID").c_str());
+  Box<Wallet> mywallet = createWallet(mymnemonics);
+
+  String senderAddress = mywallet->get_eth_address(0);
+  String receiverAddress = mywallet->get_eth_address(2);
+  auto thisNonce = get_eth_nonce(senderAddress.c_str(), mycronosrpc);
+  cout << "rpc=" << mycronosrpc << endl;
+  std::string tokenid;
+  std::cout << "Enter tokenid: ";
+  std::cin >> tokenid;
+
+  Box<EthContract> w = new_eth_contract(mycronosrpc, mycontract, json);
+
+  char tmp[300];
+  memset(tmp, 0, sizeof(tmp));
+  sprintf(tmp,
+          "[{\"Address\":{\"data\":\"%s\"}},{\"Address\":{\"data\":\"%s\"}},{"
+          "\"Uint\":{\"data\":\"%d\"}}]",
+          senderAddress.c_str(), receiverAddress.c_str(), stoi(tokenid));
+  std::cout << tmp << std::endl;
+  std::string paramsjson = tmp;
+  char hdpath[100];
+  int cointype = 60;
+  int chainid = mychainid; // defined in cronos-devnet.yaml
+  snprintf(hdpath, sizeof(hdpath), "m/44'/%d'/0'/0/0", cointype);
+  Box<PrivateKey> privatekey = mywallet->get_key(hdpath);
+  CronosTransactionReceiptRaw receipt =
+      w->transfer(*privatekey, "safeTransferFrom", paramsjson);
+
+  String status = receipt.status;
+  Vec<String> logs = receipt.logs;
+  for (auto it = logs.begin(); it != logs.end(); ++it) {
+    cout << *it << endl;
+  }
+
+  cout << "status: " << status << endl;
+}
+
 void test_cronos_testnet() {
   test_erc20_balance_of();
   test_erc20_name();

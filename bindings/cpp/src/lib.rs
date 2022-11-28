@@ -539,6 +539,7 @@ pub mod ffi {
 
         /// create cronos tx info to sign
         pub fn new_eth_tx_info() -> EthTxInfoRaw;
+
         /// sign cronos tx with private key
         pub fn build_eth_signed_tx(
             tx_info: EthTxInfoRaw,
