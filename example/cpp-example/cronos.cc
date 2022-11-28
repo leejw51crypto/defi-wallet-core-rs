@@ -505,7 +505,7 @@ void test_erc20_total_supply() {
 }
 
 // sample code for calling smart-contract
-void test_dynamic_api_send() {
+void test_dynamic_api_encode() {
   std::ifstream t("../../common/src/contract/erc721-abi.json");
   std::stringstream buffer;
   buffer << t.rdbuf();
@@ -584,13 +584,15 @@ void test_dynamic_api_call() {
   std::cout << "Enter tokenid: ";
   std::cin >> tokenid;
 
-  std::string argjson = "[{\"Uint\":{\"data\":\"1\"}}]";
-  std::string response =
-      mycontractcall->call("ownerOf", argjson.c_str()).c_str();
+  char tmp[300];
+  memset(tmp, 0, sizeof(tmp));
+  sprintf(tmp, "[{\"Uint\":{\"data\":\"%d\"}}]", stoi(tokenid));
+
+  std::string response = mycontractcall->call("ownerOf", tmp).c_str();
   std::cout << "response: " << response << endl;
 }
 
-void test_dynamic_api_transfer() {
+void test_dynamic_api_send() {
   std::ifstream t("../../common/src/contract/erc721-abi.json");
   std::stringstream buffer;
   buffer << t.rdbuf();
@@ -610,8 +612,6 @@ void test_dynamic_api_transfer() {
   std::cout << "Enter tokenid: ";
   std::cin >> tokenid;
 
-  Box<EthContract> w = new_eth_contract(mycronosrpc, mycontract, json);
-
   char tmp[300];
   memset(tmp, 0, sizeof(tmp));
   sprintf(tmp,
@@ -625,8 +625,9 @@ void test_dynamic_api_transfer() {
   int chainid = mychainid; // defined in cronos-devnet.yaml
   snprintf(hdpath, sizeof(hdpath), "m/44'/%d'/0'/0/0", cointype);
   Box<PrivateKey> privatekey = mywallet->get_key(hdpath);
-  CronosTransactionReceiptRaw receipt =
-      w->send(*privatekey, "safeTransferFrom", paramsjson);
+  Box<EthContract> w =
+      new_signing_eth_contract(mycronosrpc, mycontract, json, *privatekey);
+  CronosTransactionReceiptRaw receipt = w->send("safeTransferFrom", paramsjson);
 
   String status = receipt.status;
   Vec<String> logs = receipt.logs;
