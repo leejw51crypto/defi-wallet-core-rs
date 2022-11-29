@@ -1142,6 +1142,8 @@ pub fn build_custom_eth_signed_tx(
     legacy: bool,
     private_key: &PrivateKey,
 ) -> Result<Vec<u8>> {
+    // debug print chain_id, legacy
+    println!("chain_id: {}, legacy: {}", chain_id, legacy);
     let signedtx = defi_wallet_core_common::build_signed_eth_tx(
         tx_info.into(),
         EthNetwork::Custom { chain_id, legacy },
@@ -1178,7 +1180,10 @@ pub fn broadcast_eth_signed_raw_tx(
         web3api_url,
         polling_interval_ms,
     )?;
-    Ok(res.into())
+    let r: CronosTransactionReceiptRaw = res.into();
+    // debug print r
+    println!("CronosTransactionReceiptRaw {:?}", r);
+    Ok(r)
 }
 
 /// create cronos tx info to sign
