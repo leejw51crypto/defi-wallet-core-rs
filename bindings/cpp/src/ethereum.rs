@@ -1,5 +1,6 @@
 use crate::PrivateKey;
 use anyhow::{anyhow, Result};
+use defi_wallet_core_common::abi::EthAbiToken;
 use defi_wallet_core_common::contract::ContractCall;
 use defi_wallet_core_common::contract::DynamicContract;
 use defi_wallet_core_common::EthAbiTokenBind;
@@ -7,12 +8,13 @@ use defi_wallet_core_common::EthError;
 use ethers::abi::Detokenize;
 use ethers::abi::InvalidOutputType;
 use ethers::abi::Token;
+use ethers::contract::ContractFactory;
 use ethers::core::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
 use ethers::signers::Wallet;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use std::convert::TryFrom;
-
+use std::sync::Arc;
 type HttpProvider = Provider<Http>;
 type DynamicContractHttp = DynamicContract<HttpProvider>;
 type SigningWallet = Wallet<SigningKey>;
@@ -62,6 +64,18 @@ mod ffi {
             abi_json: String,
             private_key: &PrivateKey,
         ) -> Result<Box<EthContract>>;
+
+        // extract toplevel json with keyname
+        fn extract_json(src: String, keyname: String) -> Result<String>;
+        // 0x... -> bytes
+        fn extract_bytes(src: String, keyname: String) -> Result<Vec<u8>>;
+
+        fn encode_deploy_contract(
+            rpcserver: String,
+            abi: String,
+            bytecode: Vec<u8>,
+            function_args: String,
+        ) -> Result<Vec<u8>>;
 
         fn encode(
             &mut self,
@@ -114,6 +128,55 @@ fn new_signing_eth_contract(
         dynamic_contract: None,
         signing_contract: Some(signing_contract),
     }))
+}
+
+fn extract_json(src: String, keyname: String) -> Result<String> {
+    let json: serde_json::Value = serde_json::from_str(&src)?;
+    let json = json.get(&keyname).ok_or_else(|| anyhow!("key not found"))?;
+    let jsonstring = serde_json::to_string(&json)?;
+    Ok(jsonstring)
+}
+fn extract_bytes(src: String, keyname: String) -> Result<Vec<u8>> {
+    let json: serde_json::Value = serde_json::from_str(&src)?;
+    let value = json.get(&keyname).ok_or_else(|| anyhow!("key not found"))?;
+    let value = value
+        .as_str()
+        .ok_or_else(|| anyhow!("value is not string"))?
+        .to_string();
+
+    let value = if let Some(strippedvalue) = value.strip_prefix("0x") {
+        strippedvalue
+    } else {
+        &value
+    };
+
+    let bytes = hex::decode(value)?;
+    Ok(bytes)
+}
+fn encode_deploy_contract(
+    rpcserver: String,
+    abi: String,
+    bytecode: Vec<u8>,
+    function_args: String,
+) -> Result<Vec<u8>> {
+    let params: Vec<EthAbiTokenBind> = serde_json::from_str(&function_args)?;
+    let tokens = params
+        .iter()
+        .flat_map(EthAbiToken::try_from)
+        .map(|x| Token::try_from(&x))
+        .collect::<Result<Vec<Token>, _>>()?;
+
+    let client: Provider<Http> = Provider::<Http>::try_from(&rpcserver)?;
+    let bytecode = Bytes::from(bytecode);
+    let abi: ethers::abi::Abi = serde_json::from_str(&abi)?;
+    let client = Arc::new(client);
+    let factory = ContractFactory::new(abi, bytecode, client);
+    let deployer = factory
+        .deploy_tokens(tokens)
+        .map_err(|e| anyhow!(e.to_string()))?;
+    let data = deployer.tx.data().ok_or_else(|| anyhow!("no data"))?;
+    let data = data.to_vec();
+    Ok(data)
 }
 
 impl EthContract {
