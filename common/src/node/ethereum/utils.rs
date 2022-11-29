@@ -742,9 +742,12 @@ pub async fn broadcast_eth_signed_raw_tx(
         .await
         .map_err(EthError::BroadcastTxFail)?;
     let tx_receipt = pending_tx
+        //.confirmations(4)
         .await
         .map_err(EthError::BroadcastTxFail)?
         .ok_or(EthError::MempoolDrop)?;
+    // print tx_receipt
+    println!("tx_receipt: {:?}", tx_receipt);
     Ok(tx_receipt)
 }
 
@@ -896,6 +899,7 @@ pub fn broadcast_eth_signed_raw_tx_blocking(
         web3api_url,
         polling_interval_ms,
     ))?;
+    println!("broadcast_eth_signed_raw_tx_blocking result: {:?}", result);
     Ok(result.into())
 }
 
