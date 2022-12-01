@@ -636,7 +636,7 @@ void test_dynamic_api_send() {
 void test_dynamic_minting_api_send() {
   cout << "test_dynamic_minting_api_send" << endl;
   std::ifstream t(
-      "../../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json");
+      "../../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json");
 
   std::stringstream buffer;
   buffer << t.rdbuf();
@@ -671,12 +671,16 @@ void test_dynamic_minting_api_send() {
   std::string tokenuri = "mytokenuri";
   char tmp[300];
   memset(tmp, 0, sizeof(tmp));
+  /*sprintf(tmp, "[{\"Address\":{\"data\":\"%s\"}},{\"Address\":{\"data\":\"%s\"}},{\"Str\":{\"data\":\"%s\"}}]",
+  senderAddress.c_str(),
+          senderAddress.c_str(), tokenuri.c_str());*/
   sprintf(tmp, "[{\"Address\":{\"data\":\"%s\"}},{\"Str\":{\"data\":\"%s\"}}]",
           senderAddress.c_str(), tokenuri.c_str());
   std::cout << tmp << std::endl;
   std::string paramsjson = tmp;
   Vec<uint8_t> data; // encoded
-  data = w->encode("awardItem", paramsjson);
+  cout<<"before encode"<<endl;
+  data = w->encode("safeMint", paramsjson);
   cout << "data length=" << data.size() << endl;
 
   eth_tx_info.to_address = mycontract;
@@ -703,7 +707,7 @@ void test_dynamic_minting_api_send() {
 void test_dynamic_minting_api_send_deploy() {
   cout << "test_dynamic_minting_api_send" << endl;
   std::ifstream t(
-      "../../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json");
+      "../../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json");
 
   std::stringstream buffer;
   buffer << t.rdbuf();
@@ -744,11 +748,11 @@ void test_dynamic_minting_api_send_deploy() {
   eth_tx_info.amount_unit = EthAmount::EthDecimal;
   eth_tx_info.data = data;
 
-  // eth_tx_info.gas_limit = "2194000000";
-  // eth_tx_info.gas_price = "1000000000";
+  eth_tx_info.gas_limit = "2194000000";
+ eth_tx_info.gas_price = "1000000000";
 
-  eth_tx_info.gas_limit = "219400";
-  eth_tx_info.gas_price = "100000000";
+ // eth_tx_info.gas_limit = "219400";
+ // eth_tx_info.gas_price = "100000000";
   eth_tx_info.gas_price_unit = EthAmount::WeiDecimal;
 
   Vec<uint8_t> signedtx =
@@ -759,6 +763,39 @@ void test_dynamic_minting_api_send_deploy() {
   String contract_address = receipt.contract_address;
   cout << "contract_address: " << contract_address << endl;
   cout << "status: " << status << endl;
+}
+
+
+void test_dynamic_minting_api_call() {
+
+ std::ifstream t(
+      "../../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json");
+
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  std::string json = buffer.str();
+  String abijson = extract_json(json, "abi");
+  // print abijson
+  cout << "abijson: " << abijson << endl;
+
+
+  String mymnemonics = getEnv("MYMNEMONICS");
+  String mycronosrpc = getEnv("MYCRONOSRPC");
+  String mycontract = getEnv("MYCONTRACT721");
+
+  Box<EthContract> mycontractcall =
+      new_eth_contract(mycronosrpc, mycontract, abijson);
+
+  std::string tokenid;
+  std::cout << "Enter tokenid: ";
+  std::cin >> tokenid;
+
+  char tmp[300];
+  memset(tmp, 0, sizeof(tmp));
+  sprintf(tmp, "[{\"Uint\":{\"data\":\"%d\"}}]", stoi(tokenid));
+
+  std::string response = mycontractcall->call("ownerOf", tmp).c_str();
+  std::cout << "response: " << response << endl;
 }
 
 void test_cronos_testnet() {
