@@ -21,8 +21,8 @@ void test_dynamic_api_encode();
 void test_dynamic_api_call();
 int main(int argc, char *argv[]) {
   try {
-    //test_dynamic_deploy();
-    test_dynamic_mint("");
+    test_dynamic_deploy();
+    //test_dynamic_mint("");
 
     //test_dynamic_api_call();
     //test_dynamic_deploy();

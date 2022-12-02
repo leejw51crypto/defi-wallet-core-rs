@@ -636,7 +636,7 @@ void test_dynamic_api_send() {
 void test_dynamic_mint(std::string usercontract) {
   cout << "test_dynamic_mint" << endl;
   std::ifstream t(
-      "../../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json");
+      "../../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json");
 
   std::stringstream buffer;
   buffer << t.rdbuf();
