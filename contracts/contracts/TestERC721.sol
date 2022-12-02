@@ -17,6 +17,15 @@ contract TestERC721 is ERC721, ERC721URIStorage, Ownable {
         return "https://example.com/nft/";
     }
 
+    
+    function safeMint(address to, string memory uri) public onlyOwner {
+        uint256 tokenId = _tokenIds.current();
+        _tokenIds.increment();
+        _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
+    }
+
+
     function awardItem(address player, string memory tokenURI)
         public
         returns (uint256)
