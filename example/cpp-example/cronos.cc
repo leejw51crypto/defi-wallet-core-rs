@@ -770,6 +770,10 @@ void test_dynamic_deploy() {
   cout << "status: " << status << endl;
 
   test_dynamic_mint(contract_address);
+  test_dynamic_mint(contract_address);
+  test_dynamic_mint(contract_address);
+  test_dynamic_mint(contract_address);
+  test_dynamic_mint(contract_address);
 
 }
 
