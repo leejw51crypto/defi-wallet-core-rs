@@ -14,15 +14,18 @@
 #include <thread>
 
 void test_dynamic_deploy();
-void test_dynamic_mint();
+void test_dynamic_mint(std::string usercontract) ;
 
 void test_dynamic_api_send();
 void test_dynamic_api_encode();
+void test_dynamic_api_call();
 int main(int argc, char *argv[]) {
   try {
-    //test_dynamic_minting_api_call();
-    //test_dynamic_minting_api_send();
-    test_dynamic_deploy();
+    //test_dynamic_deploy();
+    test_dynamic_mint("");
+
+    //test_dynamic_api_call();
+    //test_dynamic_deploy();
     //test_dynamic_minting_api_call();
     // test_dynamic_api_encode();
     // test_dynamic_api_send();

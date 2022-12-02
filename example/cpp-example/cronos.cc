@@ -634,9 +634,9 @@ void test_dynamic_api_send() {
 }
 
 void test_dynamic_mint(std::string usercontract) {
-  cout << "test_dynamic_minting_api_send" << endl;
+  cout << "test_dynamic_mint" << endl;
   std::ifstream t(
-      "../../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json");
+      "../../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json");
 
   std::stringstream buffer;
   buffer << t.rdbuf();
@@ -650,6 +650,11 @@ void test_dynamic_mint(std::string usercontract) {
     cout<<"replace with usercontract="<<usercontract<<endl;
      mycontract = usercontract.c_str();
   }
+  else {
+    cout<<"use mycontract="<<mycontract<<std::endl;
+  }
+  // display mycontract
+  cout << "mycontract=" << mycontract << endl;
    
   int mychainid = stoi(getEnv("MYCRONOSCHAINID").c_str());
 
@@ -680,7 +685,7 @@ void test_dynamic_mint(std::string usercontract) {
   std::string paramsjson = tmp;
   Vec<uint8_t> data; // encoded
   cout<<"before encode"<<endl;
-  data = w->encode("awardItem", paramsjson);
+  data = w->encode("safeMint", paramsjson);
   cout << "data length=" << data.size() << endl;
 
   eth_tx_info.to_address = mycontract;
@@ -688,8 +693,8 @@ void test_dynamic_mint(std::string usercontract) {
   eth_tx_info.amount = "0";
   eth_tx_info.amount_unit = EthAmount::EthDecimal;
   eth_tx_info.data = data;
-  eth_tx_info.gas_limit = "219400";
-  eth_tx_info.gas_price = "100000000";
+  eth_tx_info.gas_limit = "21940000";
+  eth_tx_info.gas_price = "1000000000";
   eth_tx_info.gas_price_unit = EthAmount::WeiDecimal;
 
   Vec<uint8_t> signedtx =
@@ -765,6 +770,7 @@ void test_dynamic_deploy() {
   cout << "status: " << status << endl;
 
   test_dynamic_mint(contract_address);
+
 }
 
 
