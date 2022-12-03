@@ -698,7 +698,7 @@ void test_dynamic_mint(std::string usercontract) {
   eth_tx_info.gas_price_unit = EthAmount::WeiDecimal;
 
   Vec<uint8_t> signedtx =
-      build_eth_signed_tx(eth_tx_info, chainid, true, *privatekey);
+      build_eth_signed_tx(eth_tx_info, chainid, false, *privatekey);
   CronosTransactionReceiptRaw receipt =
       broadcast_eth_signed_raw_tx(signedtx, mycronosrpc, 1000);
   String status = receipt.status;
@@ -758,7 +758,7 @@ void test_dynamic_deploy() {
   eth_tx_info.gas_price_unit = EthAmount::WeiDecimal;
 
   Vec<uint8_t> signedtx =
-      build_eth_signed_tx(eth_tx_info, chainid, true, *privatekey);
+      build_eth_signed_tx(eth_tx_info, chainid, false, *privatekey);
   CronosTransactionReceiptRaw receipt =
       broadcast_eth_signed_raw_tx(signedtx, mycronosrpc, 1000);
   String status = receipt.status;
