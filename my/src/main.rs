@@ -118,13 +118,13 @@ async fn main() -> Result<()> {
     println!("nonce: {}", nonce);
     let tx = TransactionRequest::new()
         .from(fromwallet.address())
-        .to(towallet.address())
+       //.to(towallet.address())
         .data(data)
-        .gas("21000")
+        .gas("255020")
         .gas_price("10000")
         .chain_id(1)
         .nonce(nonce)
-        .value(1u64);
+        .value(0u64);
     // convertr tx to TypedTransaction
     let tx: TypedTransaction = tx.try_into()?;
     let sig = fromwallet.sign_transaction(&tx).await?;
