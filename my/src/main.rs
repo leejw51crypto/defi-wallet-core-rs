@@ -13,6 +13,7 @@ use ethers::abi::Token;
 use ethers::prelude::*;
 use ethers::signers::coins_bip39::English;
 use ethers::signers::MnemonicBuilder;
+use ethers::types::transaction::eip2718::TypedTransaction;
 use std::sync::Arc;
 use ethers::contract::ContractFactory;
 use ethers::abi::Abi;
@@ -83,14 +84,29 @@ async fn main() -> Result<()> {
 
     let mut tokens: Vec<Token> = vec![];
     let client: Provider<Http> = Provider::<Http>::try_from(&rpc)?;
-    let client = Arc::new(client);
-    let factory = ContractFactory::new(abi, bytecode, client);
+    let myclient = Arc::new(client.clone());
+    let factory = ContractFactory::new(abi, bytecode, myclient);
     let deployer = factory
         .deploy_tokens(tokens)
         .map_err(|e| anyhow!(e.to_string()))?;
     let data = deployer.tx.data().ok_or_else(|| anyhow!("no data"))?;
     let data = data.to_vec();
 
+    let tx = Eip1559TransactionRequest::new()
+        .from(fromwallet.address())
+        .to(towallet.address())
+        .gas(1000000)
+        .data(data)
+        .value(0u64);
+    // convertr tx to TypedTransaction
+    let tx:TypedTransaction = tx.try_into()?;
+    let sig = fromwallet.sign_transaction(&tx).await?;
+    let signed_tx = tx.rlp_signed(&sig).clone();
+    let txhash = client.send_raw_transaction(signed_tx).await?;
+    //let txhash = client.send_transaction(&signed_tx, None).await?;
+    println!("txhash: {:?}", txhash);
+
+    
 
     Ok(())
 }
