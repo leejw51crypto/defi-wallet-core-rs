@@ -91,6 +91,10 @@ async fn main() -> Result<()> {
         .map_err(|e| anyhow!(e.to_string()))?;
     let data = deployer.tx.data().ok_or_else(|| anyhow!("no data"))?;
     let data = data.to_vec();
+    // print lengh of data
+    println!("data length: {}", data.len());
+    
+
 
     //tx.max_fee_per_gas = self.max_fee_per_gas;
       //  tx.max_priority_fee_per_gas = self.max_priority_fee_per_gas;
