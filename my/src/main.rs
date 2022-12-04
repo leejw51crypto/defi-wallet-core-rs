@@ -99,7 +99,7 @@ async fn main() -> Result<()> {
 
     let tx = Eip1559TransactionRequest::new()
         .from(fromwallet.address())
-        .to(towallet.address())
+        //.to(towallet.address())
         .gas(1000000)
         .data(data)
         .max_fee_per_gas(1000000000)
@@ -109,6 +109,8 @@ async fn main() -> Result<()> {
         .value(0u64);
     // convertr tx to TypedTransaction
     let tx:TypedTransaction = tx.try_into()?;
+    // debug print tx
+    println!("tx: {:?}", tx);
     let sig = fromwallet.sign_transaction(&tx).await?;
     let signed_tx = tx.rlp_signed(&sig).clone();
     let txhash = client.send_raw_transaction(signed_tx).await?;
