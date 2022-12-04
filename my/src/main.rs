@@ -45,8 +45,12 @@ fn encode_deploy_contract(
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("test");
-    let json =
+    let jsonstring =
         std::fs::read_to_string("../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json")?;
+    let json= serde_json::from_str::<serde_json::Value>(&jsonstring)?;
+    let abi = json["abi"].to_string();
+    let bytecodestring=json["bytecode"].as_str().ok_or_else(|| anyhow!("no bytecode"))?;
+    
     let mnemonics: PathOrString = std::env::var("MYMNEMONICS")?.as_str().into();
 
     let rpc = std::env::var("MYCRONOSRPC")?;
