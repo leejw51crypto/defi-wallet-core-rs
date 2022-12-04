@@ -92,11 +92,20 @@ async fn main() -> Result<()> {
     let data = deployer.tx.data().ok_or_else(|| anyhow!("no data"))?;
     let data = data.to_vec();
 
+    //tx.max_fee_per_gas = self.max_fee_per_gas;
+      //  tx.max_priority_fee_per_gas = self.max_priority_fee_per_gas;
+        
+    let nonce = client.get_transaction_count(fromwallet.address(), None).await?;
+
     let tx = Eip1559TransactionRequest::new()
         .from(fromwallet.address())
         .to(towallet.address())
         .gas(1000000)
         .data(data)
+        .max_fee_per_gas(1000000000)
+        .max_priority_fee_per_gas(1000000000)
+        .chain_id(1)
+        .nonce(nonce)
         .value(0u64);
     // convertr tx to TypedTransaction
     let tx:TypedTransaction = tx.try_into()?;
