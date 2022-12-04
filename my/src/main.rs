@@ -8,9 +8,11 @@ use ethers::abi::Tokenize;
 //use ethers_signers::{MnemonicBuilder, coins_bip39::English};
 use anyhow::anyhow;
 use anyhow::Result;
+use std::io::prelude::*;
 use ethers::abi::InvalidOutputType;
 use ethers::abi::Token;
 use ethers::prelude::*;
+use sha2::Digest;
 use ethers::signers::coins_bip39::English;
 use ethers::signers::MnemonicBuilder;
 use ethers::types::transaction::eip2718::TypedTransaction;
@@ -93,6 +95,18 @@ async fn main() -> Result<()> {
     let data = data.to_vec();
     // print lengh of data
     println!("data length: {}", data.len());
+    // sha2 compute hash
+    let mut hasher = sha2::Sha256::default();
+    hasher.update(&data);
+    let hash = hasher.finalize();
+    // print hex of hash
+    println!("hash: {}", hex::encode(&hash));
+
+
+    
+
+
+
     
 
 
@@ -104,10 +118,15 @@ async fn main() -> Result<()> {
     let tx = Eip1559TransactionRequest::new()
         .from(fromwallet.address())
         //.to(towallet.address())
-        .gas(1000000)
         .data(data)
+        // good
+        .gas(1000000)
         .max_fee_per_gas(1000000000)
         .max_priority_fee_per_gas(1000000000)
+        // error
+        //.gas(2194000000u64)
+        //.max_fee_per_gas(1000000)
+        //.max_priority_fee_per_gas(1000000)
         .chain_id(1)
         .nonce(nonce)
         .value(0u64);
@@ -116,14 +135,23 @@ async fn main() -> Result<()> {
     // debug print tx
     println!("tx: {:?}", tx);
     let sig = fromwallet.sign_transaction(&tx).await?;
+    // debug print sig
+    println!("sig: {:?}", sig);
     let signed_tx = tx.rlp_signed(&sig).clone();
+
+    // write signed_tx to file        
+    let mut file = std::fs::File::create("signed_tx.bin")?;
+    // write bytes to file
+    file.write_all(&signed_tx)?;
+    // print lnegth of signed_tx
+    println!("signed_tx length: {}", signed_tx.len());
+
+    //return Ok(());
     let pending_tx = client.send_raw_transaction(signed_tx).await?;
     //let txhash = client.send_transaction(&signed_tx, None).await?;
     println!("txhash: {:?}", pending_tx);
     let receipt = pending_tx.await.unwrap().unwrap();
     println!("receipt: {:?}", receipt);
-
-
 
 
     // wait for confirmation
