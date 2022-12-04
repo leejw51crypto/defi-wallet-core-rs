@@ -113,10 +113,20 @@ async fn main() -> Result<()> {
     println!("tx: {:?}", tx);
     let sig = fromwallet.sign_transaction(&tx).await?;
     let signed_tx = tx.rlp_signed(&sig).clone();
-    let txhash = client.send_raw_transaction(signed_tx).await?;
+    let pending_tx = client.send_raw_transaction(signed_tx).await?;
     //let txhash = client.send_transaction(&signed_tx, None).await?;
-    println!("txhash: {:?}", txhash);
+    println!("txhash: {:?}", pending_tx);
+    let receipt = pending_tx.await.unwrap().unwrap();
+    println!("receipt: {:?}", receipt);
 
+
+
+
+    // wait for confirmation
+    //let receipt = client.wait_for_transaction_receipt(txhash, None, None).await?;
+    println!("receipt: {:?}", receipt);
+
+    
     
 
     Ok(())
