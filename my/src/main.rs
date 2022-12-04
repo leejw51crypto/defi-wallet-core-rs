@@ -42,6 +42,18 @@ fn encode_deploy_contract(
     Ok(data)
 }
 
+fn make_wallet(index:i32) -> Result<LocalWallet> {
+    let mnemonics: PathOrString = std::env::var("MYMNEMONICS")?.as_str().into();
+    // format string
+    let my_path = format!("m/44'/60'/0'/0/{}", index);
+    let wallet = MnemonicBuilder::<English>::default()
+        .phrase(mnemonics)
+        .derivation_path(&my_path)?
+        .build()?;
+    
+    Ok(wallet)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("test");
@@ -51,21 +63,14 @@ async fn main() -> Result<()> {
     let abi = json["abi"].to_string();
     let bytecodestring=json["bytecode"].as_str().ok_or_else(|| anyhow!("no bytecode"))?;
     
-    let mnemonics: PathOrString = std::env::var("MYMNEMONICS")?.as_str().into();
 
     let rpc = std::env::var("MYCRONOSRPC")?;
 
-    const MY_PATH: &str = "m/44'/60'/0'/0/0";
-    let wallet = MnemonicBuilder::<English>::default()
-        .phrase(mnemonics)
-        .derivation_path(MY_PATH)?
-        .build()?;
 
-    let client = Provider::<Http>::try_from(rpc)?;
-    let signer = SignerMiddleware::new(client, wallet);
-
-    // display first address of wallet
-    println!("Address: {:?}", signer.address());
+    let fromwallet= make_wallet(0)?;
+    println!("Address: {:?}", fromwallet.address());
+    let towallet= make_wallet(2)?;
+    println!("Address: {:?}", towallet.address());
 
     Ok(())
 }
