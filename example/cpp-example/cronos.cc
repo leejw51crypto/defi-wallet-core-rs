@@ -636,7 +636,7 @@ void test_dynamic_api_send() {
 void test_dynamic_mint(std::string usercontract) {
   cout << "test_dynamic_mint" << endl;
   std::ifstream t(
-      "../../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json");
+      "../../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json");
 
   std::stringstream buffer;
   buffer << t.rdbuf();
@@ -685,7 +685,7 @@ void test_dynamic_mint(std::string usercontract) {
   std::string paramsjson = tmp;
   Vec<uint8_t> data; // encoded
   cout<<"before encode"<<endl;
-  data = w->encode("awardItem", paramsjson);
+  data = w->encode("safeMint", paramsjson);
   cout << "data length=" << data.size() << endl;
 
   eth_tx_info.to_address = mycontract;
@@ -709,7 +709,8 @@ void test_dynamic_mint(std::string usercontract) {
 void test_dynamic_deploy() {
   cout << "test_dynamic_minting_api_send" << endl;
   std::ifstream t(
-      "../../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json");
+     // "../../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json");
+      "../../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json");
 
   std::stringstream buffer;
   buffer << t.rdbuf();
