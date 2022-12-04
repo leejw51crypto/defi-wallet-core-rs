@@ -1,17 +1,19 @@
+use defi_wallet_core_common::abi::EthAbiToken;
 use defi_wallet_core_common::abi::EthAbiToken::Uint;
 use defi_wallet_core_common::contract::ContractCall;
 use defi_wallet_core_common::contract::DynamicContract;
 use defi_wallet_core_common::EthAbiTokenBind;
 use ethers::abi::Detokenize;
 use ethers::abi::Tokenize;
-use defi_wallet_core_common::abi::EthAbiToken;
-
+//use ethers_signers::{MnemonicBuilder, coins_bip39::English};
+use anyhow::anyhow;
 use anyhow::Result;
 use ethers::abi::InvalidOutputType;
 use ethers::abi::Token;
 use ethers::prelude::*;
+use ethers::signers::coins_bip39::English;
+use ethers::signers::MnemonicBuilder;
 use std::sync::Arc;
-use anyhow::anyhow;
 
 fn encode_deploy_contract(
     rpcserver: String,
@@ -40,12 +42,26 @@ fn encode_deploy_contract(
     Ok(data)
 }
 
-
 #[tokio::main]
 async fn main() -> Result<()> {
-    let json = std::fs::read_to_string("../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json")?;    
+    println!("test");
+    let json =
+        std::fs::read_to_string("../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json")?;
+    let mnemonics: PathOrString = std::env::var("MYMNEMONICS")?.as_str().into();
+
     let rpc = std::env::var("MYCRONOSRPC")?;
+
+    const MY_PATH: &str = "m/44'/60'/0'/0/0";
+    let wallet = MnemonicBuilder::<English>::default()
+        .phrase(mnemonics)
+        .derivation_path(MY_PATH)?
+        .build()?;
+
     let client = Provider::<Http>::try_from(rpc)?;
-    
+    let signer = SignerMiddleware::new(client, wallet);
+
+    // display first address of wallet
+    println!("Address: {:?}", signer.address());
+
     Ok(())
 }
