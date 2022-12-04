@@ -8,18 +8,18 @@ use ethers::abi::Tokenize;
 //use ethers_signers::{MnemonicBuilder, coins_bip39::English};
 use anyhow::anyhow;
 use anyhow::Result;
-use std::io::prelude::*;
+use ethers::abi::Abi;
 use ethers::abi::InvalidOutputType;
 use ethers::abi::Token;
+use ethers::contract::ContractFactory;
 use ethers::prelude::*;
-use sha2::Digest;
 use ethers::signers::coins_bip39::English;
 use ethers::signers::MnemonicBuilder;
 use ethers::types::transaction::eip2718::TypedTransaction;
-use std::sync::Arc;
-use ethers::contract::ContractFactory;
-use ethers::abi::Abi;
 use ethers::types::Bytes;
+use sha2::Digest;
+use std::io::prelude::*;
+use std::sync::Arc;
 
 fn encode_deploy_contract(
     rpcserver: String,
@@ -48,7 +48,7 @@ fn encode_deploy_contract(
     Ok(data)
 }
 
-fn make_wallet(index:i32) -> Result<LocalWallet> {
+fn make_wallet(index: i32) -> Result<LocalWallet> {
     let mnemonics: PathOrString = std::env::var("MYMNEMONICS")?.as_str().into();
     // format string
     let my_path = format!("m/44'/60'/0'/0/{}", index);
@@ -56,7 +56,7 @@ fn make_wallet(index:i32) -> Result<LocalWallet> {
         .phrase(mnemonics)
         .derivation_path(&my_path)?
         .build()?;
-    
+
     Ok(wallet)
 }
 
@@ -65,23 +65,23 @@ async fn main() -> Result<()> {
     println!("test");
     let jsonstring =
         std::fs::read_to_string("../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json")?;
-    let json= serde_json::from_str::<serde_json::Value>(&jsonstring)?;
+    let json = serde_json::from_str::<serde_json::Value>(&jsonstring)?;
     let abi = json["abi"].to_string();
     // create Abi from abi
     let abi: Abi = serde_json::from_str(&abi)?;
-    let bytecodestring=json["bytecode"].as_str().ok_or_else(|| anyhow!("no bytecode"))?;
+    let bytecodestring = json["bytecode"]
+        .as_str()
+        .ok_or_else(|| anyhow!("no bytecode"))?;
     // skip 2 bytes and hex decode bytecodestring
     let bytecode = hex::decode(&bytecodestring[2..])?;
     // convert bytecode to Bytes
     let bytecode = Bytes::from(bytecode);
-    
 
     let rpc = std::env::var("MYCRONOSRPC")?;
 
-
-    let fromwallet= make_wallet(0)?;
+    let fromwallet = make_wallet(0)?;
     println!("Address: {:?}", fromwallet.address());
-    let towallet= make_wallet(2)?;
+    let towallet = make_wallet(2)?;
     println!("Address: {:?}", towallet.address());
 
     let mut tokens: Vec<Token> = vec![];
@@ -102,18 +102,12 @@ async fn main() -> Result<()> {
     // print hex of hash
     println!("hash: {}", hex::encode(&hash));
 
-
-    
-
-
-
-    
-
-
     //tx.max_fee_per_gas = self.max_fee_per_gas;
-      //  tx.max_priority_fee_per_gas = self.max_priority_fee_per_gas;
-        
-    let nonce = client.get_transaction_count(fromwallet.address(), None).await?;
+    //  tx.max_priority_fee_per_gas = self.max_priority_fee_per_gas;
+
+    let nonce = client
+        .get_transaction_count(fromwallet.address(), None)
+        .await?;
 
     let tx = Eip1559TransactionRequest::new()
         .from(fromwallet.address())
@@ -131,7 +125,7 @@ async fn main() -> Result<()> {
         .nonce(nonce)
         .value(0u64);
     // convertr tx to TypedTransaction
-    let tx:TypedTransaction = tx.try_into()?;
+    let tx: TypedTransaction = tx.try_into()?;
     // debug print tx
     println!("tx: {:?}", tx);
     let sig = fromwallet.sign_transaction(&tx).await?;
@@ -139,7 +133,7 @@ async fn main() -> Result<()> {
     println!("sig: {:?}", sig);
     let signed_tx = tx.rlp_signed(&sig).clone();
 
-    // write signed_tx to file        
+    // write signed_tx to file
     let mut file = std::fs::File::create("signed_tx.bin")?;
     // write bytes to file
     file.write_all(&signed_tx)?;
@@ -153,13 +147,9 @@ async fn main() -> Result<()> {
     let receipt = pending_tx.await.unwrap().unwrap();
     println!("receipt: {:?}", receipt);
 
-
     // wait for confirmation
     //let receipt = client.wait_for_transaction_receipt(txhash, None, None).await?;
     println!("receipt: {:?}", receipt);
-
-    
-    
 
     Ok(())
 }
