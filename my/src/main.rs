@@ -14,6 +14,9 @@ use ethers::prelude::*;
 use ethers::signers::coins_bip39::English;
 use ethers::signers::MnemonicBuilder;
 use std::sync::Arc;
+use ethers::contract::ContractFactory;
+use ethers::abi::Abi;
+use ethers::types::Bytes;
 
 fn encode_deploy_contract(
     rpcserver: String,
@@ -61,7 +64,13 @@ async fn main() -> Result<()> {
         std::fs::read_to_string("../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json")?;
     let json= serde_json::from_str::<serde_json::Value>(&jsonstring)?;
     let abi = json["abi"].to_string();
+    // create Abi from abi
+    let abi: Abi = serde_json::from_str(&abi)?;
     let bytecodestring=json["bytecode"].as_str().ok_or_else(|| anyhow!("no bytecode"))?;
+    // skip 2 bytes and hex decode bytecodestring
+    let bytecode = hex::decode(&bytecodestring[2..])?;
+    // convert bytecode to Bytes
+    let bytecode = Bytes::from(bytecode);
     
 
     let rpc = std::env::var("MYCRONOSRPC")?;
@@ -71,6 +80,17 @@ async fn main() -> Result<()> {
     println!("Address: {:?}", fromwallet.address());
     let towallet= make_wallet(2)?;
     println!("Address: {:?}", towallet.address());
+
+    let mut tokens: Vec<Token> = vec![];
+    let client: Provider<Http> = Provider::<Http>::try_from(&rpc)?;
+    let client = Arc::new(client);
+    let factory = ContractFactory::new(abi, bytecode, client);
+    let deployer = factory
+        .deploy_tokens(tokens)
+        .map_err(|e| anyhow!(e.to_string()))?;
+    let data = deployer.tx.data().ok_or_else(|| anyhow!("no data"))?;
+    let data = data.to_vec();
+
 
     Ok(())
 }
