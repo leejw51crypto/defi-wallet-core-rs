@@ -64,7 +64,7 @@ fn make_wallet(index: i32) -> Result<LocalWallet> {
 async fn main() -> Result<()> {
     println!("test");
     let jsonstring =
-        std::fs::read_to_string("../contracts/artifacts/contracts/MyErc721.sol/MyErc721.json")?;
+        std::fs::read_to_string("../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json")?;
     let json = serde_json::from_str::<serde_json::Value>(&jsonstring)?;
     let abi = json["abi"].to_string();
     // create Abi from abi
@@ -113,17 +113,14 @@ async fn main() -> Result<()> {
         .from(fromwallet.address())
         //.to(towallet.address())
         .data(data)
-        // bad
+        // good
         .gas(1000000)
         .max_fee_per_gas(1000000000)
         .max_priority_fee_per_gas(1000000000)
-
-        // good
-        .gas("2194000000")
-        .max_fee_per_gas(1000000000)
-        .max_priority_fee_per_gas(1000000000)
-        
-        
+        // error
+        //.gas(2194000000u64)
+        //.max_fee_per_gas(1000000)
+        //.max_priority_fee_per_gas(1000000)
         .chain_id(1)
         .nonce(nonce)
         .value(0u64);
@@ -150,6 +147,9 @@ async fn main() -> Result<()> {
     let receipt = pending_tx.await.unwrap().unwrap();
     println!("receipt: {:?}", receipt);
 
+    // wait for confirmation
+    //let receipt = client.wait_for_transaction_receipt(txhash, None, None).await?;
+    println!("receipt: {:?}", receipt);
 
     Ok(())
 }
