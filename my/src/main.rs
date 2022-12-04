@@ -95,61 +95,48 @@ async fn main() -> Result<()> {
     let data = data.to_vec();
     // print lengh of data
     println!("data length: {}", data.len());
-    // sha2 compute hash
-    let mut hasher = sha2::Sha256::default();
-    hasher.update(&data);
-    let hash = hasher.finalize();
-    // print hex of hash
-    println!("hash: {}", hex::encode(&hash));
-
-    //tx.max_fee_per_gas = self.max_fee_per_gas;
-    //  tx.max_priority_fee_per_gas = self.max_priority_fee_per_gas;
 
     let nonce = client
         .get_transaction_count(fromwallet.address(), None)
         .await?;
 
-    let tx = Eip1559TransactionRequest::new()
-        .from(fromwallet.address())
-        //.to(towallet.address())
-        .data(data)
-        // bad
-        .gas(1000000)
-        .max_fee_per_gas(1000000000)
-        .max_priority_fee_per_gas(1000000000)
+    /*let tx = Eip1559TransactionRequest::new()
+    .from(fromwallet.address())
+    //.to(towallet.address())
+    .data(data)
 
-        // good
-        .gas("2194000000")
-        .max_fee_per_gas(1000000000)
-        .max_priority_fee_per_gas(1000000000)
-        
-        
+    // good
+    .gas("2194000000")
+    .max_fee_per_gas(1000000000)
+    .max_priority_fee_per_gas(1000000000)
+
+
+    .chain_id(1)
+    .nonce(nonce)
+    .value(0u64);*/
+    // display nonce
+    println!("nonce: {}", nonce);
+    let tx = TransactionRequest::new()
+        .from(fromwallet.address())
+        .to(towallet.address())
+        .data(data)
+        .gas("21000")
+        .gas_price("10000")
         .chain_id(1)
         .nonce(nonce)
-        .value(0u64);
+        .value(1u64);
     // convertr tx to TypedTransaction
     let tx: TypedTransaction = tx.try_into()?;
-    // debug print tx
-    println!("tx: {:?}", tx);
     let sig = fromwallet.sign_transaction(&tx).await?;
-    // debug print sig
     println!("sig: {:?}", sig);
     let signed_tx = tx.rlp_signed(&sig).clone();
-
-    // write signed_tx to file
-    let mut file = std::fs::File::create("signed_tx.bin")?;
-    // write bytes to file
-    file.write_all(&signed_tx)?;
-    // print lnegth of signed_tx
-    println!("signed_tx length: {}", signed_tx.len());
-
-    //return Ok(());
     let pending_tx = client.send_raw_transaction(signed_tx).await?;
-    //let txhash = client.send_transaction(&signed_tx, None).await?;
-    println!("txhash: {:?}", pending_tx);
+
+
+    /*let pending_tx = client.send_transaction(tx, None).await?;
+    println!("txhash: {:?}", pending_tx);*/
     let receipt = pending_tx.await.unwrap().unwrap();
     println!("receipt: {:?}", receipt);
-
 
     Ok(())
 }
