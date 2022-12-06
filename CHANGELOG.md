@@ -1,5 +1,5 @@
 # Changelog
-## [0.x.x] - unreleased
+## [0.3.1] - 2022-12-6
 ### Added
 - Dynamic Contract C++ Bindings 
 - Minting C++ Example
