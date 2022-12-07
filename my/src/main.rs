@@ -158,44 +158,43 @@ async fn main2() -> Result<()> {
 }
 
 /*
-pub enum EthAbiToken {
-    Address(H160),
-    FixedBytes(Vec<u8>),
-    Bytes(Vec<u8>),
-    Int(U256),
-    Uint(U256),
-    Bool(bool),
-    String(String),
-    FixedArray(Vec<EthAbiToken>),
-    Array(Vec<EthAbiToken>),
-    Tuple(Vec<EthAbiToken>),
-    /// Above are standard Solidity values. This struct value is used to extend for recursively
-    /// nested structs.
-    Struct(EthAbiStructName, HashMap<EthAbiFieldName, EthAbiToken>),
-}
-
+ pub enum EthAbiTokenBind {
+        Address { data: String },
+        FixedBytes { data: Vec<u8> },
+        Bytes { data: Vec<u8> },
+        Int { data: String },
+        Uint { data: String },
+        Bool { data: bool },
+        Str { data: String },
+        FixedArray { data: Vec<EthAbiTokenBind> },
+        Array { data: Vec<EthAbiTokenBind> },
+        Tuple { data: Vec<EthAbiTokenBind> },
+    }
 */
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut tokens: Vec<EthAbiToken> = vec![];
-    tokens.push(EthAbiToken::Address(H160::from_str("0x0000000000000000000000000000000000000000")?));
-    tokens.push(EthAbiToken::FixedBytes(vec![0u8; 2]));
-    tokens.push(EthAbiToken::Bytes(vec![0u8; 2]));
-    tokens.push(EthAbiToken::Int(U256::from(0u64)));
-    tokens.push(EthAbiToken::Uint(U256::from(0u64)));
-    tokens.push(EthAbiToken::Bool(false));
-    tokens.push(EthAbiToken::String("test".to_string()));
-    tokens.push(EthAbiToken::FixedArray(vec![EthAbiToken::Uint(U256::from(0u64)); 2]));
-    tokens.push(EthAbiToken::Array(vec![EthAbiToken::Uint(U256::from(0u64)); 2]));
-    tokens.push(EthAbiToken::Tuple(vec![EthAbiToken::Uint(U256::from(0u64)); 2]));
+    let mut tokens: Vec<EthAbiTokenBind> = vec![];
+    let datum= EthAbiTokenBind::Int { data: "1".to_string() };
 
-    // make sample hashmap
-    let mut map: HashMap<String, EthAbiToken> = HashMap::new();
-    map.insert("test".to_string(), EthAbiToken::Uint(U256::from(0u64)));
-    map.insert("test2".to_string(), EthAbiToken::Uint(U256::from(1u64)));
+    tokens.push(EthAbiTokenBind::Address {
+        data: "0x0000000000000000000000000000000000000000".to_string(),
+    });
+    tokens.push(EthAbiTokenBind::FixedBytes { data: vec![1,2] });
+    tokens.push(EthAbiTokenBind::Bytes { data: vec![1,2] });
+    tokens.push(EthAbiTokenBind::Int { data: "1".to_string() });
+    tokens.push(EthAbiTokenBind::Uint { data: "1".to_string() });
+    tokens.push(EthAbiTokenBind::Bool { data: true });
+    tokens.push(EthAbiTokenBind::Str { data: "test".to_string() });
+    tokens.push(EthAbiTokenBind::FixedArray { data: vec![datum] });
+    tokens.push(EthAbiTokenBind::Array { data: vec![datum] });
+    tokens.push(EthAbiTokenBind::Tuple { data: vec![datum] });
 
-    tokens.push(EthAbiToken::Struct("test".to_string(), map));  
 
+    
+
+
+    
+    
 
     // make json from tokens
     let json = serde_json::to_string(&tokens)?;
