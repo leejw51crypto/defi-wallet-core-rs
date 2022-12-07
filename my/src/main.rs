@@ -185,9 +185,9 @@ async fn main() -> Result<()> {
     tokens.push(EthAbiTokenBind::Uint { data: "1".to_string() });
     tokens.push(EthAbiTokenBind::Bool { data: true });
     tokens.push(EthAbiTokenBind::Str { data: "test".to_string() });
-    tokens.push(EthAbiTokenBind::FixedArray { data: vec![datum] });
-    tokens.push(EthAbiTokenBind::Array { data: vec![datum] });
-    tokens.push(EthAbiTokenBind::Tuple { data: vec![datum] });
+    tokens.push(EthAbiTokenBind::FixedArray { data: vec![datum.clone()] });
+    tokens.push(EthAbiTokenBind::Array { data: vec![datum.clone()] });
+    tokens.push(EthAbiTokenBind::Tuple { data: vec![datum.clone()] });
 
 
     
