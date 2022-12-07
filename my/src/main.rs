@@ -177,12 +177,10 @@ pub enum EthAbiToken {
 */
 #[tokio::main]
 async fn main() -> Result<()> {
-    // make list of EthAbiToken
     let mut tokens: Vec<EthAbiToken> = vec![];
-    // add all types to tokens
     tokens.push(EthAbiToken::Address(H160::from_str("0x0000000000000000000000000000000000000000")?));
-    tokens.push(EthAbiToken::FixedBytes(vec![0u8; 32]));
-    tokens.push(EthAbiToken::Bytes(vec![0u8; 32]));
+    tokens.push(EthAbiToken::FixedBytes(vec![0u8; 2]));
+    tokens.push(EthAbiToken::Bytes(vec![0u8; 2]));
     tokens.push(EthAbiToken::Int(U256::from(0u64)));
     tokens.push(EthAbiToken::Uint(U256::from(0u64)));
     tokens.push(EthAbiToken::Bool(false));
@@ -196,11 +194,13 @@ async fn main() -> Result<()> {
     map.insert("test".to_string(), EthAbiToken::Uint(U256::from(0u64)));
     map.insert("test2".to_string(), EthAbiToken::Uint(U256::from(1u64)));
 
-    tokens.push(EthAbiToken::Struct("test".to_string(), HashMap::new()));  
+    tokens.push(EthAbiToken::Struct("test".to_string(), map));  
 
 
     // make json from tokens
     let json = serde_json::to_string(&tokens)?;
+    //let json = serde_json::to_string_pretty(&tokens)?;
+    
     // print json
     println!("json: {}", json);
     
