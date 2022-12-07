@@ -5,6 +5,8 @@ use defi_wallet_core_common::contract::DynamicContract;
 use defi_wallet_core_common::EthAbiTokenBind;
 use ethers::abi::Detokenize;
 use ethers::abi::Tokenize;
+// use hashmap
+use std::collections::HashMap;
 //use ethers_signers::{MnemonicBuilder, coins_bip39::English};
 use anyhow::anyhow;
 use anyhow::Result;
@@ -20,6 +22,7 @@ use ethers::types::Bytes;
 use sha2::Digest;
 use std::io::prelude::*;
 use std::sync::Arc;
+use std::str::FromStr;
 
 fn encode_deploy_contract(
     rpcserver: String,
@@ -61,7 +64,7 @@ fn make_wallet(index: i32) -> Result<LocalWallet> {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main2() -> Result<()> {
     println!("test");
     let jsonstring =
         std::fs::read_to_string("../contracts/artifacts/contracts/TestERC721.sol/TestERC721.json")?;
@@ -151,5 +154,57 @@ async fn main() -> Result<()> {
     //let receipt = client.wait_for_transaction_receipt(txhash, None, None).await?;
     println!("receipt: {:?}", receipt);
 
+    Ok(())
+}
+
+/*
+pub enum EthAbiToken {
+    Address(H160),
+    FixedBytes(Vec<u8>),
+    Bytes(Vec<u8>),
+    Int(U256),
+    Uint(U256),
+    Bool(bool),
+    String(String),
+    FixedArray(Vec<EthAbiToken>),
+    Array(Vec<EthAbiToken>),
+    Tuple(Vec<EthAbiToken>),
+    /// Above are standard Solidity values. This struct value is used to extend for recursively
+    /// nested structs.
+    Struct(EthAbiStructName, HashMap<EthAbiFieldName, EthAbiToken>),
+}
+
+*/
+#[tokio::main]
+async fn main() -> Result<()> {
+    // make list of EthAbiToken
+    let mut tokens: Vec<EthAbiToken> = vec![];
+    // add all types to tokens
+    tokens.push(EthAbiToken::Address(H160::from_str("0x0000000000000000000000000000000000000000")?));
+    tokens.push(EthAbiToken::FixedBytes(vec![0u8; 32]));
+    tokens.push(EthAbiToken::Bytes(vec![0u8; 32]));
+    tokens.push(EthAbiToken::Int(U256::from(0u64)));
+    tokens.push(EthAbiToken::Uint(U256::from(0u64)));
+    tokens.push(EthAbiToken::Bool(false));
+    tokens.push(EthAbiToken::String("test".to_string()));
+    tokens.push(EthAbiToken::FixedArray(vec![EthAbiToken::Uint(U256::from(0u64)); 2]));
+    tokens.push(EthAbiToken::Array(vec![EthAbiToken::Uint(U256::from(0u64)); 2]));
+    tokens.push(EthAbiToken::Tuple(vec![EthAbiToken::Uint(U256::from(0u64)); 2]));
+
+    // make sample hashmap
+    let mut map: HashMap<String, EthAbiToken> = HashMap::new();
+    map.insert("test".to_string(), EthAbiToken::Uint(U256::from(0u64)));
+    map.insert("test2".to_string(), EthAbiToken::Uint(U256::from(1u64)));
+
+    tokens.push(EthAbiToken::Struct("test".to_string(), HashMap::new()));  
+
+
+    // make json from tokens
+    let json = serde_json::to_string(&tokens)?;
+    // print json
+    println!("json: {}", json);
+    
+    
+    println!("test");
     Ok(())
 }
