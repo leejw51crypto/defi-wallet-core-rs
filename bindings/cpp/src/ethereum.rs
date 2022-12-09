@@ -3,7 +3,6 @@ use anyhow::{anyhow, Result};
 use defi_wallet_core_common::contract::ContractCall;
 use defi_wallet_core_common::contract::DynamicContract;
 use defi_wallet_core_common::EthAbiTokenBind;
-use defi_wallet_core_common::EthError;
 use ethers::abi::Detokenize;
 use ethers::abi::InvalidOutputType;
 use ethers::abi::Token;
@@ -20,6 +19,7 @@ type SigningingDynamicContractHttp = DynamicContract<SignerHttpWallet>;
 pub struct EthContract {
     dynamic_contract: Option<DynamicContractHttp>,
     signing_contract: Option<SigningingDynamicContractHttp>,
+    rt: tokio::runtime::Runtime,
 }
 
 pub struct EthDetokenizer {
@@ -90,12 +90,14 @@ fn new_eth_contract(
     contract_address: String,
     abi_json: String,
 ) -> Result<Box<EthContract>> {
+    let rt = tokio::runtime::Runtime::new()?;
     let client: Provider<Http> = Provider::<Http>::try_from(&rpcserver)?;
     let dynamic_contract: DynamicContract<Provider<Http>> =
         DynamicContract::new(&contract_address, &abi_json, client)?;
     Ok(Box::new(EthContract {
         dynamic_contract: Some(dynamic_contract),
         signing_contract: None,
+        rt,
     }))
 }
 
@@ -105,6 +107,7 @@ fn new_signing_eth_contract(
     abi_json: String,
     private_key: &PrivateKey,
 ) -> Result<Box<EthContract>> {
+    let rt = tokio::runtime::Runtime::new()?;
     let client: Provider<Http> = Provider::<Http>::try_from(&rpcserver)?;
     let signingkey: SigningKey = SigningKey::from_bytes(&private_key.to_bytes())?;
     let wallet: Wallet<SigningKey> = signingkey.into();
@@ -115,6 +118,7 @@ fn new_signing_eth_contract(
     Ok(Box::new(EthContract {
         dynamic_contract: None,
         signing_contract: Some(signing_contract),
+        rt,
     }))
 }
 
@@ -126,44 +130,56 @@ fn read_json(filepath: String, keyname: String) -> Result<String> {
     Ok(jsonstring)
 }
 
+async fn do_send(
+    ethcontract: &SigningingDynamicContractHttp,
+    function_name: &str,
+    function_args: &str, // json
+) -> Result<crate::ffi::CronosTransactionReceiptRaw> {
+    let params: Vec<EthAbiTokenBind> = serde_json::from_str(function_args)?;
+    let ethcontractcall: ContractCall<_, EthDetokenizer> =
+        ethcontract.function_call(function_name, params)?;
+    let ethersreceipt = ethcontractcall.send().await?;
+    let defireceipt: defi_wallet_core_common::TransactionReceipt = ethersreceipt.into();
+    let ret: crate::ffi::CronosTransactionReceiptRaw = defireceipt.into();
+    Ok(ret)
+}
+
+async fn do_encode(
+    ethcontract: &DynamicContractHttp,
+    function_name: &str,
+    function_args: &str, // json
+) -> Result<Vec<u8>> {
+    let params: Vec<EthAbiTokenBind> = serde_json::from_str(function_args)?;
+    let ethcontractcall: ContractCall<_, EthDetokenizer> =
+        ethcontract.function_call(function_name, params)?;
+    let tx: TypedTransaction = ethcontractcall.get_tx();
+    let data = tx.data().ok_or_else(|| anyhow!("no data"))?;
+    Ok(data.to_vec())
+}
+
+async fn do_call(
+    ethcontract: &DynamicContractHttp,
+    function_name: &str,
+    function_args: &str, // json
+) -> Result<String> {
+    let params: Vec<EthAbiTokenBind> = serde_json::from_str(function_args)?;
+    let ethcontractcall: ContractCall<_, EthDetokenizer> =
+        ethcontract.function_call(function_name, params)?;
+    let response: EthDetokenizer = ethcontractcall.call().await?;
+    Ok(response.json)
+}
+
 impl EthContract {
-    async fn do_call(
-        &mut self,
-        function_name: &str,
-        function_args: &str, // json
-    ) -> Result<String> {
-        let ethcontract = self
-            .dynamic_contract
-            .as_mut()
-            .ok_or_else(|| anyhow!("contract not initialized"))?;
-        let params: Vec<EthAbiTokenBind> = serde_json::from_str(function_args)?;
-        let ethcontractcall: ContractCall<_, EthDetokenizer> =
-            ethcontract.function_call(function_name, params)?;
-        let response: EthDetokenizer = ethcontractcall.call().await?;
-        Ok(response.json)
-    }
-
     pub fn call(&mut self, function_name: &str, function_args: &str) -> Result<String> {
-        let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
-        let res = rt.block_on(self.do_call(function_name, function_args))?;
-        Ok(res)
-    }
-
-    async fn do_encode(
-        &mut self,
-        function_name: &str,
-        function_args: &str, // json
-    ) -> Result<Vec<u8>> {
         let ethcontract = self
             .dynamic_contract
             .as_mut()
             .ok_or_else(|| anyhow!("contract not initialized"))?;
-        let params: Vec<EthAbiTokenBind> = serde_json::from_str(function_args)?;
-        let ethcontractcall: ContractCall<_, EthDetokenizer> =
-            ethcontract.function_call(function_name, params)?;
-        let tx: TypedTransaction = ethcontractcall.get_tx();
-        let data = tx.data().ok_or_else(|| anyhow!("no data"))?;
-        Ok(data.to_vec())
+
+        let res = self
+            .rt
+            .block_on(do_call(ethcontract, function_name, function_args))?;
+        Ok(res)
     }
 
     pub fn encode(
@@ -171,12 +187,18 @@ impl EthContract {
         function_name: &str,
         function_args: &str, // json
     ) -> Result<Vec<u8>> {
-        let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
-        let res = rt.block_on(self.do_encode(function_name, function_args))?;
+        let ethcontract = self
+            .dynamic_contract
+            .as_mut()
+            .ok_or_else(|| anyhow!("contract not initialized"))?;
+
+        let res = self
+            .rt
+            .block_on(do_encode(ethcontract, function_name, function_args))?;
         Ok(res)
     }
 
-    async fn do_send(
+    fn send(
         &mut self,
         function_name: &str,
         function_args: &str, // json
@@ -185,21 +207,10 @@ impl EthContract {
             .signing_contract
             .as_mut()
             .ok_or_else(|| anyhow!("contract not initialized"))?;
-        let params: Vec<EthAbiTokenBind> = serde_json::from_str(function_args)?;
-        let ethcontractcall: ContractCall<_, EthDetokenizer> =
-            ethcontract.function_call(function_name, params)?;
-        let ethersreceipt = ethcontractcall.send().await?;
-        let defireceipt: defi_wallet_core_common::TransactionReceipt = ethersreceipt.into();
-        let ret: crate::ffi::CronosTransactionReceiptRaw = defireceipt.into();
-        Ok(ret)
-    }
-    fn send(
-        &mut self,
-        function_name: &str,
-        function_args: &str, // json
-    ) -> Result<crate::ffi::CronosTransactionReceiptRaw> {
-        let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
-        let res = rt.block_on(self.do_send(function_name, function_args))?;
-        Ok(res)
+
+        let result = self
+            .rt
+            .block_on(do_send(ethcontract, function_name, function_args));
+        result
     }
 }
