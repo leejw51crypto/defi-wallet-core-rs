@@ -60,6 +60,10 @@ endif
 cpp: build_cpp
 	. ./scripts/.env && cd $(cpp_example) && make run
 
+cppfast: 
+	. ./scripts/.env && cd $(cpp_example) && make static && make run
+
+
 proto:
 	cd proto-build && cargo run
 
