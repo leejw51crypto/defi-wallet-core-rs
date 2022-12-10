@@ -13,20 +13,10 @@
 #include <sstream>
 #include <thread>
 
+void test_dynamic_mint();
+void test_dynamic_mint_with_encoding();
+void test_blocking_runtime();
 int main(int argc, char *argv[]) {
-  try {
-    org::defi_wallet_core::set_cronos_httpagent("cronos-wallet-cpp-example");
-    test_wallet();
-    chainmain_process();   // chain-main
-    test_chainmain_nft();  // chainmain nft tests
-    test_login();          // decentralized login
-    cronos_process();      // cronos
-    test_cronos_testnet(); // cronos testnet
-    test_interval();
-  } catch (const rust::cxxbridge1::Error &e) {
-    // Use `Assertion failed`, the same as `assert` function
-    std::cout << "Assertion failed: " << e.what() << std::endl;
-  }
-
-  return 0;
+    test_blocking_runtime();
+    return 0;
 }

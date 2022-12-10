@@ -10,6 +10,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <thread>
 
 using namespace std;
 using namespace rust;
@@ -17,6 +18,7 @@ using namespace org::defi_wallet_core;
 
 void test_uint();
 void test_approval();
+void test_blocking_runtime();
 
 Box<Wallet> createWallet(String mymnemonics);
 String getEnv(String key);
@@ -719,4 +721,30 @@ void test_cronos_testnet() {
   test_erc20_symbol();
   test_erc20_decimals();
   test_erc20_total_supply();
+}
+
+using ::org::defi_wallet_core::BlockingRuntime;
+
+void test_blocking_runtime() 
+{
+  std::string str;
+  cout<<"test_blocking_runtime"<<endl;
+  BlockingRuntime* runtime=new_blocking_runtime().into_raw();
+  // spawn thread
+  std::thread t1([runtime](){
+    cout<<"thread1"<<endl;
+    runtime->sleep(1000);
+    cout<<"thread1 finish"<<endl;
+  });
+  // read string from console
+  
+  cout<<"press key"<<endl;
+  std::cin>>str;
+  Box<BlockingRuntime> runtime2= Box<BlockingRuntime>::from_raw(runtime);    
+  runtime=NULL;
+  cout<<"finish"<<endl;
+ 
+  std::cin>>str;
+  
+
 }

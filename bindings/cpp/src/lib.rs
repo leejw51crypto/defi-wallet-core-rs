@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use cosmos_sdk_proto::tendermint::types::Block;
 use cxx::{type_id, ExternType};
 use defi_wallet_core_common::node::ethereum::provider::set_ethers_httpagent;
 use defi_wallet_core_common::{
@@ -12,6 +13,7 @@ use defi_wallet_core_common::{
 use ethers::types::Signature;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Duration;
 mod nft;
 
 mod contract;
@@ -19,6 +21,10 @@ mod contract;
 mod uint;
 
 mod ethereum;
+
+pub struct BlockingRuntime {
+    rt: tokio::runtime::Runtime,
+}
 
 /// Wrapper of `CosmosSDKMsg`
 ///
@@ -386,6 +392,18 @@ pub mod ffi {
     }
 
     extern "Rust" {
+        type BlockingRuntime;
+        fn new_blocking_runtime() -> Result<Box<BlockingRuntime>>;
+
+        fn sleep(
+            &self,
+            milliseconds: u64,            
+        ) -> Result<()>;
+
+         
+    }
+
+    extern "Rust" {
         /// query account details from cosmos address
         pub fn query_account_details(api_url: String, address: String) -> Result<String>;
         /// query account details info from cosmos address
@@ -567,6 +585,14 @@ pub mod ffi {
             raw_tx: Vec<u8>,
             web3api_url: &str,
             polling_interval_ms: u64,
+        ) -> Result<CronosTransactionReceiptRaw>;
+
+        /// broadcast signed cronos tx with control
+        pub fn broadcast_eth_signed_raw_tx_with_runtime(
+            raw_tx: Vec<u8>,
+            web3api_url: &str,
+            polling_interval_ms: u64,
+            runtime: &mut BlockingRuntime
         ) -> Result<CronosTransactionReceiptRaw>;
 
         /// set cronos http-agent name
@@ -1181,6 +1207,24 @@ pub fn broadcast_eth_signed_raw_tx(
     Ok(res.into())
 }
 
+pub fn broadcast_eth_signed_raw_tx_with_runtime(
+    raw_tx: Vec<u8>,
+    web3api_url: &str,
+    polling_interval_ms: u64,
+    rt: &BlockingRuntime,
+) -> Result<CronosTransactionReceiptRaw> {
+    
+    let res:TransactionReceipt= 
+        rt.rt.block_on(
+            defi_wallet_core_common::broadcast_eth_signed_raw_tx(
+                raw_tx,
+                web3api_url,
+                polling_interval_ms,
+            )
+        )?.into();
+    Ok(res.into())
+}
+
 /// create cronos tx info to sign
 pub fn new_eth_tx_info() -> ffi::EthTxInfoRaw {
     ffi::EthTxInfoRaw {
@@ -1198,4 +1242,40 @@ pub fn new_eth_tx_info() -> ffi::EthTxInfoRaw {
 pub fn set_cronos_httpagent(agent: &str) -> Result<()> {
     set_ethers_httpagent(agent)?;
     Ok(())
+}
+
+pub fn new_blocking_runtime() -> Result<Box<BlockingRuntime>>
+{
+    let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
+    Ok(Box::new(BlockingRuntime{rt}))
+}
+
+use tokio::io::copy;
+use tokio::net::TcpListener;
+async fn do_process()->Result<()> {
+        // run echo server
+        let addr = "127.0.0.1:6143";
+        let mut listener = TcpListener::bind(addr).await?;
+        println!("Listen on {}", addr);
+        loop {
+            let (mut sock, _) = listener.accept().await?;
+            tokio::spawn(async move {
+                let (mut reader, mut writer) = sock.split();
+                copy(&mut reader, &mut writer).await.unwrap();
+            });
+        }
+
+}
+
+
+impl BlockingRuntime {
+    pub fn sleep(&self, milliseconds: u64) -> Result<()> {
+    
+        
+
+        // wait for milliseconds
+        //self.rt.block_on(tokio::time::sleep(Duration::from_millis(milliseconds)));
+        self.rt.block_on(do_process());
+        Ok(())
+    }
 }
