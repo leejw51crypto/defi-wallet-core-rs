@@ -395,12 +395,9 @@ pub mod ffi {
         type BlockingRuntime;
         fn new_blocking_runtime() -> Result<Box<BlockingRuntime>>;
 
-        fn sleep(
-            &self,
-            milliseconds: u64,            
-        ) -> Result<()>;
+        fn sleep(&self, milliseconds: u64) -> Result<()>;
+        fn listen(&self, bindaddresss: &str) -> Result<()>;
 
-         
     }
 
     extern "Rust" {
@@ -592,7 +589,7 @@ pub mod ffi {
             raw_tx: Vec<u8>,
             web3api_url: &str,
             polling_interval_ms: u64,
-            runtime: &mut BlockingRuntime
+            runtime: &mut BlockingRuntime,
         ) -> Result<CronosTransactionReceiptRaw>;
 
         /// set cronos http-agent name
@@ -1213,15 +1210,14 @@ pub fn broadcast_eth_signed_raw_tx_with_runtime(
     polling_interval_ms: u64,
     rt: &BlockingRuntime,
 ) -> Result<CronosTransactionReceiptRaw> {
-    
-    let res:TransactionReceipt= 
-        rt.rt.block_on(
-            defi_wallet_core_common::broadcast_eth_signed_raw_tx(
-                raw_tx,
-                web3api_url,
-                polling_interval_ms,
-            )
-        )?.into();
+    let res: TransactionReceipt = rt
+        .rt
+        .block_on(defi_wallet_core_common::broadcast_eth_signed_raw_tx(
+            raw_tx,
+            web3api_url,
+            polling_interval_ms,
+        ))?
+        .into();
     Ok(res.into())
 }
 
@@ -1244,38 +1240,37 @@ pub fn set_cronos_httpagent(agent: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn new_blocking_runtime() -> Result<Box<BlockingRuntime>>
-{
+pub fn new_blocking_runtime() -> Result<Box<BlockingRuntime>> {
     let rt = tokio::runtime::Runtime::new().map_err(|_err| EthError::AsyncRuntimeError)?;
-    Ok(Box::new(BlockingRuntime{rt}))
+    Ok(Box::new(BlockingRuntime { rt }))
 }
 
 use tokio::io::copy;
 use tokio::net::TcpListener;
-async fn do_process()->Result<()> {
-        // run echo server
-        let addr = "127.0.0.1:6143";
-        let mut listener = TcpListener::bind(addr).await?;
-        println!("Listen on {}", addr);
-        loop {
-            let (mut sock, _) = listener.accept().await?;
-            tokio::spawn(async move {
-                let (mut reader, mut writer) = sock.split();
-                copy(&mut reader, &mut writer).await.unwrap();
-            });
-        }
-
+async fn do_listen(addr: &str) -> Result<()> {
+    let listener = TcpListener::bind(addr).await?;
+    println!("Listen on {}", addr);
+    loop {
+        let (mut sock, _) = listener.accept().await?;
+        tokio::spawn(async move {
+            let (mut reader, mut writer) = sock.split();
+            copy(&mut reader, &mut writer).await.unwrap();
+        });
+    }
 }
 
-
+async fn do_sleep(milliseconds: u64) -> Result<()> {
+    tokio::time::sleep(Duration::from_millis(milliseconds)).await;
+    Ok(())
+}
 impl BlockingRuntime {
-    pub fn sleep(&self, milliseconds: u64) -> Result<()> {
-    
-        
+    pub fn listen(&self, bindaddress: &str) -> Result<()> {
+        self.rt.block_on(do_listen(bindaddress))?;
+        Ok(())
+    }
 
-        // wait for milliseconds
-        //self.rt.block_on(tokio::time::sleep(Duration::from_millis(milliseconds)));
-        self.rt.block_on(do_process());
+    pub fn sleep(&self, milliseconds: u64) -> Result<()> {
+        self.rt.block_on(do_sleep(milliseconds))?;
         Ok(())
     }
 }

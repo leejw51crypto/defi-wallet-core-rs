@@ -725,26 +725,42 @@ void test_cronos_testnet() {
 
 using ::org::defi_wallet_core::BlockingRuntime;
 
+// not gracefully shutdown
+// because tokio::sleep does not ? opertor
+void test_blocking_runtime_sleep() 
+{
+  std::string str;
+  cout<<"test_blocking_runtime"<<endl;
+  BlockingRuntime* runtime=new_blocking_runtime().into_raw();
+  std::thread t1([runtime](){
+    cout<<"thread1"<<endl;
+    runtime->sleep(100000);
+    cout<<"thread1 finish"<<endl;
+  });
+  cout<<"press key to finish"<<endl;
+  std::cin>>str;
+  Box<BlockingRuntime> runtime2= Box<BlockingRuntime>::from_raw(runtime);    
+  runtime=NULL;
+  cout<<"ok"<<endl; 
+
+}
+
+// graceful close, shutdown is called in dropped
 void test_blocking_runtime() 
 {
   std::string str;
   cout<<"test_blocking_runtime"<<endl;
   BlockingRuntime* runtime=new_blocking_runtime().into_raw();
-  // spawn thread
   std::thread t1([runtime](){
     cout<<"thread1"<<endl;
-    runtime->sleep(1000);
+    runtime->listen("127.0.0.1:6143");
     cout<<"thread1 finish"<<endl;
   });
-  // read string from console
-  
-  cout<<"press key"<<endl;
+  // c++ sleep 1 second
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  cout<<"press key to finish"<<endl;
   std::cin>>str;
   Box<BlockingRuntime> runtime2= Box<BlockingRuntime>::from_raw(runtime);    
   runtime=NULL;
-  cout<<"finish"<<endl;
- 
-  std::cin>>str;
-  
-
+  cout<<"ok"<<endl; 
 }
