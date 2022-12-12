@@ -12,8 +12,10 @@ use defi_wallet_core_common::{
 
 use ethers::types::Signature;
 use std::str::FromStr;
+use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::time::Duration;
+
 mod nft;
 
 mod contract;
@@ -1260,7 +1262,14 @@ async fn do_listen(addr: &str) -> Result<()> {
 }
 
 async fn do_sleep(milliseconds: u64) -> Result<()> {
-    tokio::time::sleep(Duration::from_millis(milliseconds)).await;
+    let timer = timer::Timer::new();
+    let (tx, rx) = channel();
+
+    timer.schedule_with_delay(chrono::Duration::milliseconds(milliseconds as i64), move || {
+        tx.send(()).unwrap();
+    });
+
+    _ = rx.recv(); // ignore recv error
     Ok(())
 }
 impl BlockingRuntime {
