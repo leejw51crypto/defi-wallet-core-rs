@@ -146,7 +146,7 @@ where
     M: Middleware,
     D: Detokenize,
 {
-    contract_call: builders::ContractCall<M, D>,
+    pub contract_call: builders::ContractCall<M, D>,
 }
 
 impl<M, D> ContractCall<M, D>
@@ -170,6 +170,9 @@ where
 
     /// Returns the raw transaction request
     pub fn get_tx(&self) -> TypedTransaction {
+        println!("get_tx~~~~~~~~~~~~~~~~~~~");
+        // debug print self.contract_call.tx
+        println!("{:?}", self.contract_call.tx);
         self.contract_call.tx.clone()
     }
 
