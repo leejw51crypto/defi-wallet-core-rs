@@ -47,5 +47,10 @@ public class MainActivity : AppCompatActivity() {
             return myMap
         }
 
+        @JvmStatic
+        fun writeSecureStorage(key:String, value:String): Int {            
+            return 100
+        }
+
     }
 }
