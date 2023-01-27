@@ -40,8 +40,11 @@ public class MainActivity : AppCompatActivity() {
         }
 
         @JvmStatic
-        fun writeSecureStorage(key:String, value:String): Int {
-            return 0;
+        fun readSecureStorage(key:String):  HashMap<String, String> {
+            val myMap = HashMap<String, String>()
+            myMap["key1"] = "value1"
+            myMap["key2"] = "value2"
+            return myMap
         }
 
     }
