@@ -5,19 +5,27 @@ extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_mykotlin_MainActivity_stringFromJNI(
         JNIEnv* env,
         jobject /* this */) {
+
+    // get application context from env
+    jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
+    jmethodID currentActivityThreadMethod = env->GetStaticMethodID(activityThreadClass, "currentActivityThread", "()Landroid/app/ActivityThread;");
+    jobject activityThread = env->CallStaticObjectMethod(activityThreadClass, currentActivityThreadMethod);
+    jmethodID getApplicationMethod = env->GetMethodID(activityThreadClass, "getApplication", "()Landroid/app/Application;");
+    jobject context = env->CallObjectMethod(activityThread, getApplicationMethod);
+
     char buf[100];        
     std::string hello = "Hello from C++~~~~";
 
      // Get the class for the Kotlin class
-     jclass kotlinClass = env->FindClass("com/example/mykotlin/MainActivity");
+     jclass kotlinClass = env->FindClass("com/example/mykotlin/SecureStorage");
 
      // Get the method for the function
-     jmethodID functionMethod = env->GetStaticMethodID(kotlinClass, "writeSecureStorage", "(Ljava/lang/String;Ljava/lang/String;)I");
+     jmethodID functionMethod = env->GetStaticMethodID(kotlinClass, "writeSecureStorage", "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)I");
 
     // make jstring from "key"    
     jstring key=env->NewStringUTF("key2");
     jstring value=env->NewStringUTF("value2");
-    jint ret=env->CallStaticIntMethod(kotlinClass, functionMethod, key, value);
+    jint ret=env->CallStaticIntMethod(kotlinClass, functionMethod, context, key, value);
     // get int from jint ret
         
     sprintf(buf, "Hello from C++~~~~, ret=%d", ret);
@@ -34,7 +42,7 @@ Java_com_example_mykotlin_MainActivity_stringFromJNI2(
     std::string hello = "Hello from C++~~~~";
 
      // Get the class for the Kotlin class
-     jclass kotlinClass = env->FindClass("com/example/mykotlin/MainActivity");
+     jclass kotlinClass = env->FindClass("com/example/mykotlin/SecureStorage");
 
      // Get the method for the function
      jmethodID functionMethod = env->GetStaticMethodID(kotlinClass, "readSecureStorage", "(Ljava/lang/String;)Ljava/util/HashMap;");
