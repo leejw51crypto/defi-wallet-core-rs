@@ -54,7 +54,7 @@ Java_com_example_mykotlin_MainActivity_stringFromJNI(
      jclass kotlinClass = env->FindClass("com/example/mykotlin/SecureStorage");
 
      // Get the method for the function
-     jmethodID functionMethod = env->GetStaticMethodID(kotlinClass, "readSecureStorage", "(Landroid/content/Context;sLjava/lang/String;)Ljava/util/HashMap;");
+     jmethodID functionMethod = env->GetStaticMethodID(kotlinClass, "readSecureStorage", "(Landroid/content/Context;Ljava/lang/String;)Ljava/util/HashMap;");
 
     // make jstring from "key"    
     jstring x=env->NewStringUTF("apple");
