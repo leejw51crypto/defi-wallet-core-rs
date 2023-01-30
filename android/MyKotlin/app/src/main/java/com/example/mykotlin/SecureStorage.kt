@@ -45,9 +45,15 @@ class SecureStorage {
             if (file.exists()) {
                 encryptedFile.openFileInput().use { inputStream ->
                     var myvalue=inputStream.readBytes().toString(Charsets.UTF_8)            
-                    myMap["result"] = myvalue
-                    println(myvalue)                
+                    myMap["result"] = myvalue                               
+                    myMap["success"]="1"
+                    myMap["error"]=""
                 }
+            }
+            else {
+                myMap["result"] =""
+                myMap["success"]="0"
+                myMap["error"]="encrypt file not found"
             }
 
             return myMap
@@ -68,17 +74,18 @@ class SecureStorage {
             ).build()
 
 
+            var ret=0; // 1: success, 0: fail
             if (file.exists()) {
                 file.delete()
             }
 
             encryptedFile.openFileOutput().use { outputStream ->                
                 outputStream.write(value.toByteArray())
+                ret=1;
             }
 
 
-
-            return 100
+            return ret
         }
 
     }
