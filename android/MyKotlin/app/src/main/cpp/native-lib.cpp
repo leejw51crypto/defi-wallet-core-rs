@@ -1,7 +1,10 @@
 #include <jni.h>
 #include <string>
 using namespace std;
-int secureStorageWrite(JNIEnv *env, string userkey, string uservalue) {
+
+
+
+int secureStorageWrite(JNIEnv *env,string secureStorageClass ,string userkey, string uservalue) {
   jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
   jmethodID currentActivityThreadMethod =
       env->GetStaticMethodID(activityThreadClass, "currentActivityThread",
@@ -11,7 +14,7 @@ int secureStorageWrite(JNIEnv *env, string userkey, string uservalue) {
   jmethodID getApplicationMethod = env->GetMethodID(
       activityThreadClass, "getApplication", "()Landroid/app/Application;");
   jobject context = env->CallObjectMethod(activityThread, getApplicationMethod);
-  jclass kotlinClass = env->FindClass("com/example/mykotlin/SecureStorage");
+  jclass kotlinClass = env->FindClass(secureStorageClass.c_str());
   jmethodID functionMethod = env->GetStaticMethodID(
       kotlinClass, "writeSecureStorage",
       "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)I");
@@ -22,10 +25,7 @@ int secureStorageWrite(JNIEnv *env, string userkey, string uservalue) {
   return (int)ret;
 }
 
-string secureStorageRead(JNIEnv *env, string userkey) {                    
-  char buf[100];
-
-  // get application context from env
+string secureStorageRead(JNIEnv *env, string secureStorageClass,string userkey) {                    
   jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
   jmethodID currentActivityThreadMethod =
       env->GetStaticMethodID(activityThreadClass, "currentActivityThread",
@@ -35,11 +35,7 @@ string secureStorageRead(JNIEnv *env, string userkey) {
   jmethodID getApplicationMethod = env->GetMethodID(
       activityThreadClass, "getApplication", "()Landroid/app/Application;");
   jobject context = env->CallObjectMethod(activityThread, getApplicationMethod);
-
-  // Get the class for the Kotlin class
-  jclass kotlinClass = env->FindClass("com/example/mykotlin/SecureStorage");
-
-  // Get the method for the function
+  jclass kotlinClass = env->FindClass(secureStorageClass.c_str());
   jmethodID functionMethod = env->GetStaticMethodID(
       kotlinClass, "readSecureStorage",
       "(Landroid/content/Context;Ljava/lang/String;)Ljava/util/HashMap;");
@@ -76,51 +72,14 @@ string secureStorageRead(JNIEnv *env, string userkey) {
   return finalret;
 }
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_example_mykotlin_MainActivity_stringFromJNI2(JNIEnv *env,
-                                                      jobject /* this */) {
-
-  // get application context from env
-  jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
-  jmethodID currentActivityThreadMethod =
-      env->GetStaticMethodID(activityThreadClass, "currentActivityThread",
-                             "()Landroid/app/ActivityThread;");
-  jobject activityThread = env->CallStaticObjectMethod(
-      activityThreadClass, currentActivityThreadMethod);
-  jmethodID getApplicationMethod = env->GetMethodID(
-      activityThreadClass, "getApplication", "()Landroid/app/Application;");
-  jobject context = env->CallObjectMethod(activityThread, getApplicationMethod);
-
-  char buf[100];
-  std::string hello = "Hello from C++~~~~";
-
-  // Get the class for the Kotlin class
-  jclass kotlinClass = env->FindClass("com/example/mykotlin/SecureStorage");
-
-  // Get the method for the function
-  jmethodID functionMethod = env->GetStaticMethodID(
-      kotlinClass, "writeSecureStorage",
-      "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)I");
-
-  // make jstring from "key"
-  jstring key = env->NewStringUTF("apple");
-  jstring value = env->NewStringUTF("computer 123~~~~~~~");
-  jint ret = env->CallStaticIntMethod(kotlinClass, functionMethod, context, key,
-                                      value);
-  // get int from jint ret
-
-  sprintf(buf, "Hello from C++~~~~, ret=%d", ret);
-  hello = buf;
-  return env->NewStringUTF(hello.c_str());
-}
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_mykotlin_MainActivity_stringFromJNI(JNIEnv *env,
                                                      jobject /* this */) {
 
   try {
-    secureStorageWrite(env, "apple", "1234567890");
-    string ret=secureStorageRead(env , "apple");
+    secureStorageWrite(env,"com/example/mykotlin/SecureStorage", "apple", "hello world ps5");
+    string ret=secureStorageRead(env ,"com/example/mykotlin/SecureStorage", "apple");
     return env->NewStringUTF(ret.c_str());
   }
   catch(std::string& e) {
