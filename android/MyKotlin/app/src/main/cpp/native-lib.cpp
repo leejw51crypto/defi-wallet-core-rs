@@ -2,9 +2,10 @@
 #include <string>
 using namespace std;
 
+#define SECURE_STORAGE_CLASS "com/example/mykotlin/SecureStorage"
 
-
-int secureStorageWrite(JNIEnv *env,string secureStorageClass ,string userkey, string uservalue) {
+int secureStorageWrite(JNIEnv *env, string userkey, string uservalue) {
+  string secureStorageClass = SECURE_STORAGE_CLASS;
   jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
   jmethodID currentActivityThreadMethod =
       env->GetStaticMethodID(activityThreadClass, "currentActivityThread",
@@ -25,7 +26,8 @@ int secureStorageWrite(JNIEnv *env,string secureStorageClass ,string userkey, st
   return (int)ret;
 }
 
-string secureStorageRead(JNIEnv *env, string secureStorageClass,string userkey) {                    
+string secureStorageRead(JNIEnv *env, string userkey) {
+  string secureStorageClass = SECURE_STORAGE_CLASS;
   jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
   jmethodID currentActivityThreadMethod =
       env->GetStaticMethodID(activityThreadClass, "currentActivityThread",
@@ -44,7 +46,6 @@ string secureStorageRead(JNIEnv *env, string secureStorageClass,string userkey) 
   jobject ret =
       env->CallStaticObjectMethod(kotlinClass, functionMethod, context, x);
 
-  
   jstring resultkey = env->NewStringUTF("result");
   jstring successkey = env->NewStringUTF("success");
   jstring errorkey = env->NewStringUTF("error");
@@ -52,37 +53,40 @@ string secureStorageRead(JNIEnv *env, string secureStorageClass,string userkey) 
   jmethodID getMethod = env->GetMethodID(
       mapClass, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
 
-  jstring resultvalue = (jstring)env->CallObjectMethod(ret, getMethod, resultkey);
-  string resultvaluestring = string(env->GetStringUTFChars(resultvalue, 0));    
-  
-  jstring successvalue = (jstring)env->CallObjectMethod(ret, getMethod, successkey);
-  string successvaluestring = string(env->GetStringUTFChars(successvalue, 0));    
+  jstring resultvalue =
+      (jstring)env->CallObjectMethod(ret, getMethod, resultkey);
+  string resultvaluestring = string(env->GetStringUTFChars(resultvalue, 0));
+
+  jstring successvalue =
+      (jstring)env->CallObjectMethod(ret, getMethod, successkey);
+  string successvaluestring = string(env->GetStringUTFChars(successvalue, 0));
 
   jstring errorvalue = (jstring)env->CallObjectMethod(ret, getMethod, errorkey);
-  string errorvaluestring = string(env->GetStringUTFChars(errorvalue, 0));    
+  string errorvaluestring = string(env->GetStringUTFChars(errorvalue, 0));
 
-     
-  string finalret= resultvaluestring;  
-  if ("0"==successvaluestring) { // error
+  string finalret = resultvaluestring;
+  if ("0" == successvaluestring) { // error
     throw errorvaluestring;
   }
 
-  
-  
   return finalret;
 }
-
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_mykotlin_MainActivity_stringFromJNI(JNIEnv *env,
                                                      jobject /* this */) {
 
   try {
-    secureStorageWrite(env,"com/example/mykotlin/SecureStorage", "apple", "hello world ps5");
-    string ret=secureStorageRead(env ,"com/example/mykotlin/SecureStorage", "apple");
+    // make 64 length string to test
+    string s;
+    for (int i = 0; i < 64; i++) {
+      s += "a";
+    }
+
+    secureStorageWrite(env, "apple", "hello world ps5 xbox"+s);
+    string ret = secureStorageRead(env, "apple");
     return env->NewStringUTF(ret.c_str());
-  }
-  catch(std::string& e) {
+  } catch (std::string &e) {
     return env->NewStringUTF(e.c_str());
   }
 }
