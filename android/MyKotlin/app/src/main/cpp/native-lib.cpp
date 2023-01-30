@@ -2,7 +2,7 @@
 #include <string>
 using namespace std;
 
-#define SECURE_STORAGE_CLASS "com/example/mykotlin/SecureStorage"
+#define SECURE_STORAGE_CLASS "com/cronos/play/SecureStorage"
 
 int secureStorageWrite(JNIEnv *env, string userkey, string uservalue) {
   string secureStorageClass = SECURE_STORAGE_CLASS;

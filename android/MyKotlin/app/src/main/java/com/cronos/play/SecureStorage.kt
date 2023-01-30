@@ -1,4 +1,4 @@
-package com.example.mykotlin
+package com.cronos.play
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,7 +8,6 @@ import androidx.fragment.app.Fragment
 import androidx.security.crypto.EncryptedFile
 import androidx.security.crypto.MasterKey
 import androidx.security.crypto.MasterKey.Builder
-//import com.example.mykotlin.databinding.FragmentFirstBinding
 import java.io.File
 import android.content.Context
 import java.io.FileOutputStream
