@@ -25,22 +25,41 @@ class SecureStorage {
 
 
         @JvmStatic
-        fun readSecureStorage(key:String):  HashMap<String, String> {
-            val myMap = HashMap<String, String>()
-            myMap["key1"] = "value1"
-            myMap["key2"] = "value2"
+        fun readSecureStorage(context:Context ,key:String):   HashMap<String, String> {
+
+            val masterKey: MasterKey = Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            val file = File(context.filesDir, key)
+            val encryptedFile: EncryptedFile = EncryptedFile.Builder(
+                context,
+                file,
+                masterKey,
+                EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+            ).build()
+
+            val myMap = HashMap<String, String>()         
+          
+
+            if (file.exists()) {
+                encryptedFile.openFileInput().use { inputStream ->
+                    var myvalue=inputStream.readBytes().toString(Charsets.UTF_8)            
+                    myMap["result"] = myvalue
+                    println(myvalue)                
+                }
+            }
+
             return myMap
         }
 
         @JvmStatic
         fun writeSecureStorage(context:Context , key:String, value:String): Int {
-
-            //var context=ContextProvider.getActivity().getApplicationContext()
             val masterKey: MasterKey = Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                 .build()
 
-            val file = File(context.filesDir, "secret_data")
+            val file = File(context.filesDir, key)
             val encryptedFile: EncryptedFile = EncryptedFile.Builder(
                 context,
                 file,
@@ -53,10 +72,8 @@ class SecureStorage {
                 file.delete()
             }
 
-            encryptedFile.openFileOutput().use { outputStream ->
-                var currentTime = System.currentTimeMillis()
-                var myString = "TESTCODE %d".format(currentTime)
-                outputStream.write(myString.toByteArray())
+            encryptedFile.openFileOutput().use { outputStream ->                
+                outputStream.write(value.toByteArray())
             }
 
 
