@@ -83,7 +83,7 @@ Java_com_example_mykotlin_MainActivity_stringFromJNI(JNIEnv *env,
       s += "a";
     }
 
-    secureStorageWrite(env, "apple", "hello world ps5 xbox"+s);
+    secureStorageWrite(env, "apple", "hello world "+s);
     string ret = secureStorageRead(env, "apple");
     return env->NewStringUTF(ret.c_str());
   } catch (std::string &e) {
