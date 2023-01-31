@@ -6,6 +6,7 @@ members = [
     "common",
     "bindings/wasm",
     "bindings/cpp",
+    "android/MyJava",
 ]
 default-members = [
     "proto-build",
