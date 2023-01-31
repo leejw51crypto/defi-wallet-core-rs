@@ -8,6 +8,8 @@ export TARGET_CC=$TOOLCHAIN/bin/$TARGET$API-clang
 export CXX=$TOOLCHAIN/bin/$TARGET$API-clang++ 
 export TARGET_AR=$TOOLCHAIN/bin/llvm-ar 
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TOOLCHAIN/bin/$TARGET$API-clang 
-export RUSTFLAGS="-L$HOME/my"
+#export RUSTFLAGS="-L$HOME/my"
+export RUSTFLAGS+=" -L`pwd`"
 cargo build --target=$TARGET --release
+echo $RUSTFLAGS
 
