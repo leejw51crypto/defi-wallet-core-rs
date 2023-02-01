@@ -20,11 +20,15 @@ fn main() -> Result<()> {
         "The isEmpty() method of the java.lang.String instance returned {}",
         rust_boolean
     );
-    let _static_invocation_result = jvm.invoke_static(
+    let resulttime = jvm.invoke_static(
         "java.lang.System",  // The Java class to invoke
         "currentTimeMillis", // The static method of the Java class to invoke
         &Vec::new(), // The `InvocationArg`s to use for the invocation - empty for this example
     )?;
+    // display resulttime
+    let rust_resulttime: i64 = jvm.to_rust(resulttime)?;
+    println!("The currentTimeMillis() method of the java.lang.System class returned {}", rust_resulttime);
+    
     let system_class = jvm.static_class("java.lang.System")?;
     let system_out_field = jvm.field(&system_class, "out");
     let access_mode_enum = jvm.static_class("java.nio.file.AccessMode")?;
