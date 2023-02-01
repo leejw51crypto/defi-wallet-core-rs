@@ -391,8 +391,8 @@ pub mod ffi {
         type U256 = crate::uint::ffi::U256;
 
         include!("defi-wallet-core-cpp/include/android.h");
-        fn secureStorageWrite(userkey2: String, uservalue2: String) -> i32;
-        fn secureStorageRead(userkey2: String) -> String;
+        fn secureStorageWrite(userkey: String, uservalue: String) -> i32;
+        fn secureStorageRead(userkey: String) -> String;
     }
 
     extern "Rust" {
@@ -454,7 +454,7 @@ pub mod ffi {
 
         /// recovers/imports HD wallet from a BIP39 backup phrase (English words) and password
         /// and save to secure storage
-        #[cfg(not(target_os = "android"))]
+        //#[cfg(not(target_os = "android"))]
         fn restore_wallet_save_to_securestorage(
             mnemonic: String,
             password: String,
@@ -464,7 +464,7 @@ pub mod ffi {
 
         /// recovers/imports HD wallet from a BIP39 backup phrase (English words) and password
         /// from secure storage   
-        #[cfg(not(target_os = "android"))]
+        //#[cfg(not(target_os = "android"))]
         fn restore_wallet_load_from_securestorage(
             servicename: String,
             username: String,
@@ -776,7 +776,7 @@ fn restore_wallet_load_from_securestorage(
         HDWallet::recover_wallet(securestorageinfo.mnemonic, Some(securestorageinfo.password))?;
     Ok(Box::new(Wallet { wallet }))
 }
-/*
+
 #[cfg(target_os = "android")]
 fn restore_wallet_save_to_securestorage(
     mnemonic: String,
@@ -784,14 +784,22 @@ fn restore_wallet_save_to_securestorage(
     servicename: String,
     username: String,
 ) -> Result<Box<Wallet>> {
+    use ffi::secureStorageWrite;
+
     let securestorageinfo = SecureStorageWaleltInfo {
         mnemonic: mnemonic.clone(),
         password: password.clone(),
     };
+    
+    let keyvalue = format!("{}_{}", servicename, username);
 
     let infojson = serde_json::to_string(&securestorageinfo)?;
-    let entry = keyring::Entry::new(&servicename, &username);
-    entry.set_password(&infojson)?;
+    //let entry = keyring::Entry::new(&servicename, &username);
+    //entry.set_password(&infojson)?;
+    let result=ffi::secureStorageWrite(keyvalue, infojson);
+    if 0 == result  {
+        return Err(anyhow!("Cannot save to secure storage"));
+    }
     let wallet = HDWallet::recover_wallet(mnemonic, Some(password))?;
     Ok(Box::new(Wallet { wallet }))
 }
@@ -801,15 +809,18 @@ fn restore_wallet_load_from_securestorage(
     servicename: String,
     username: String,
 ) -> Result<Box<Wallet>> {
-    let entry = keyring::Entry::new(&servicename, &username);
+    let keyvalue = format!("{}_{}", servicename, username);
 
-    let infojson = entry.get_password()?;
+    //let entry = keyring::Entry::new(&servicename, &username);
+
+    //let infojson = entry.get_password()?;
+    let infojson = ffi::secureStorageRead(keyvalue);
     let securestorageinfo: SecureStorageWaleltInfo = serde_json::from_str(&infojson)?;
     let wallet =
         HDWallet::recover_wallet(securestorageinfo.mnemonic, Some(securestorageinfo.password))?;
     Ok(Box::new(Wallet { wallet }))
 }
-*/
+
 
 
 impl Wallet {
