@@ -11,5 +11,4 @@ export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$TOOLCHAIN/bin/$TARGET$API-clan
 #export RUSTFLAGS="-L$HOME/my"
 export RUSTFLAGS+=" -L`pwd`"
 cargo build --target=$TARGET --release
-echo $RUSTFLAGS
 
