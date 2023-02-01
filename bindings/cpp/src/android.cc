@@ -1,7 +1,7 @@
 #include <jni.h>
 #include <string>
 #include "defi-wallet-core-cpp/include/android.h"
-#define SECURE_STORAGE_CLASS "com/example/game/SecureStorage"
+#define SECURE_STORAGE_CLASS "com/cronos/play/SecureStorage"
 using namespace std;
 
 JNIEnv* g_env=NULL;
