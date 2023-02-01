@@ -6,7 +6,7 @@ using namespace std;
 
 JNIEnv* g_env=NULL;
 namespace org {
-namespace blobstore {
+namespace defi_wallet_core {
 
 void test() {}
 

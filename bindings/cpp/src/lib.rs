@@ -386,9 +386,13 @@ pub mod ffi {
         pub effective_gas_price: String,
     }
 
-    extern "C++" {
+    unsafe extern "C++" {
         include!("defi-wallet-core-cpp/src/uint.rs.h");
         type U256 = crate::uint::ffi::U256;
+
+        include!("defi-wallet-core-cpp/include/android.h");
+        fn secureStorageWrite(userkey2: String, uservalue2: String) -> i32;
+        fn secureStorageRead(userkey2: String) -> String;
     }
 
     extern "Rust" {
@@ -772,6 +776,41 @@ fn restore_wallet_load_from_securestorage(
         HDWallet::recover_wallet(securestorageinfo.mnemonic, Some(securestorageinfo.password))?;
     Ok(Box::new(Wallet { wallet }))
 }
+/*
+#[cfg(target_os = "android")]
+fn restore_wallet_save_to_securestorage(
+    mnemonic: String,
+    password: String,
+    servicename: String,
+    username: String,
+) -> Result<Box<Wallet>> {
+    let securestorageinfo = SecureStorageWaleltInfo {
+        mnemonic: mnemonic.clone(),
+        password: password.clone(),
+    };
+
+    let infojson = serde_json::to_string(&securestorageinfo)?;
+    let entry = keyring::Entry::new(&servicename, &username);
+    entry.set_password(&infojson)?;
+    let wallet = HDWallet::recover_wallet(mnemonic, Some(password))?;
+    Ok(Box::new(Wallet { wallet }))
+}
+
+#[cfg(target_os = "android")]
+fn restore_wallet_load_from_securestorage(
+    servicename: String,
+    username: String,
+) -> Result<Box<Wallet>> {
+    let entry = keyring::Entry::new(&servicename, &username);
+
+    let infojson = entry.get_password()?;
+    let securestorageinfo: SecureStorageWaleltInfo = serde_json::from_str(&infojson)?;
+    let wallet =
+        HDWallet::recover_wallet(securestorageinfo.mnemonic, Some(securestorageinfo.password))?;
+    Ok(Box::new(Wallet { wallet }))
+}
+*/
+
 
 impl Wallet {
     /// get backup mnemonic phrase
