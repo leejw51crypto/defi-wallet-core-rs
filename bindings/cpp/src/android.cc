@@ -20,7 +20,7 @@ int secureStorageWrite( rust::String userkey2, rust::String uservalue2) {
   string userkey = userkey2.c_str();
   string uservalue = uservalue2.c_str();
     JNIEnv* env = g_env;
-  
+
   string secureStorageClass = SECURE_STORAGE_CLASS;
   jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
   jmethodID currentActivityThreadMethod =
@@ -83,12 +83,12 @@ rust::String secureStorageRead(rust::String userkey) {
   jstring errorvalue = (jstring)env->CallObjectMethod(ret, getMethod, errorkey);
   string errorvaluestring = string(env->GetStringUTFChars(errorvalue, 0));
 
-  string finalret = resultvaluestring;
-  if ("0" == successvaluestring) { // error
-    throw errorvaluestring;
-  }
-
-  return rust::String(finalret.c_str());
+  //{"result":"test result","success":"1","error":"test error"}
+  char tmp[1000];
+    sprintf(tmp, "{\"result\":\"%s\",\"success\":\"%s\",\"error\":\"%s\"}",
+            resultvaluestring.c_str(), successvaluestring.c_str(),
+            errorvaluestring.c_str());
+  return rust::String(tmp);
 }
 
 } // namespace blobstore
