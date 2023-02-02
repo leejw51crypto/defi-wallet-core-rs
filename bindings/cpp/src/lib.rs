@@ -30,7 +30,7 @@ pub struct SecureStorageWaleltInfo {
 #[derive(Serialize, Deserialize)]
 struct SecureStorageReadForAndroid {
     result: String,
-    success: String, 
+    success: String,
     error: String,
 }
 
@@ -792,17 +792,16 @@ fn restore_wallet_save_to_securestorage(
     servicename: String,
     username: String,
 ) -> Result<Box<Wallet>> {
-
     let securestorageinfo = SecureStorageWaleltInfo {
         mnemonic: mnemonic.clone(),
         password: password.clone(),
     };
-    
+
     let keyvalue = format!("{}_{}", servicename, username);
 
     let infojson = serde_json::to_string(&securestorageinfo)?;
-    let result=ffi::secureStorageWrite(keyvalue, infojson);
-    if 0 == result  {
+    let result = ffi::secureStorageWrite(keyvalue, infojson);
+    if 0 == result {
         return Err(anyhow!("Cannot save to secure storage"));
     }
     let wallet = HDWallet::recover_wallet(mnemonic, Some(password))?;
@@ -817,9 +816,12 @@ fn restore_wallet_load_from_securestorage(
     let keyvalue = format!("{}_{}", servicename, username);
 
     let androidjson = ffi::secureStorageRead(keyvalue);
-    let androidinfo :SecureStorageReadForAndroid= serde_json::from_str(&androidjson)?;
-    if androidinfo.success=="0" {
-        return Err(anyhow!("Cannot load from secure storage {}", androidinfo.error));
+    let androidinfo: SecureStorageReadForAndroid = serde_json::from_str(&androidjson)?;
+    if androidinfo.success == "0" {
+        return Err(anyhow!(
+            "Cannot load from secure storage {}",
+            androidinfo.error
+        ));
     }
     let infojson = androidinfo.result;
     let securestorageinfo: SecureStorageWaleltInfo = serde_json::from_str(&infojson)?;
@@ -827,8 +829,6 @@ fn restore_wallet_load_from_securestorage(
         HDWallet::recover_wallet(securestorageinfo.mnemonic, Some(securestorageinfo.password))?;
     Ok(Box::new(Wallet { wallet }))
 }
-
-
 
 impl Wallet {
     /// get backup mnemonic phrase

@@ -16,7 +16,12 @@ public class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Example of a call to a native method
-        binding.sampleText.text = stringFromJNI()
+        // delcare string
+        
+        val mystring = stringFromJNI()
+        binding.sampleText.text = mystring
+        // print mystring
+        println(mystring)
     }
 
 

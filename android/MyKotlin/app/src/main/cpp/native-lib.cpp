@@ -4,7 +4,10 @@ using namespace std;
 
 #define SECURE_STORAGE_CLASS "com/cronos/play/SecureStorage"
 
-int secureStorageWrite(JNIEnv *env, string userkey, string uservalue) {
+int secureStorageWriteBasic( JNIEnv* env,string userkey, string uservalue) {
+
+    
+
   string secureStorageClass = SECURE_STORAGE_CLASS;
   jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
   jmethodID currentActivityThreadMethod =
@@ -23,10 +26,12 @@ int secureStorageWrite(JNIEnv *env, string userkey, string uservalue) {
   jstring value = env->NewStringUTF(uservalue.c_str());
   jint ret = env->CallStaticIntMethod(kotlinClass, functionMethod, context, key,
                                       value);
+
   return (int)ret;
 }
 
-string secureStorageRead(JNIEnv *env, string userkey) {
+string secureStorageReadBasic( JNIEnv* env , string userkey) {
+
   string secureStorageClass = SECURE_STORAGE_CLASS;
   jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
   jmethodID currentActivityThreadMethod =
@@ -64,13 +69,13 @@ string secureStorageRead(JNIEnv *env, string userkey) {
   jstring errorvalue = (jstring)env->CallObjectMethod(ret, getMethod, errorkey);
   string errorvaluestring = string(env->GetStringUTFChars(errorvalue, 0));
 
-  string finalret = resultvaluestring;
-  if ("0" == successvaluestring) { // error
-    throw errorvaluestring;
-  }
-
-  return finalret;
+  char tmp[1000];
+    sprintf(tmp, "{\"result\":\"%s\",\"success\":\"%s\",\"error\":\"%s\"}",
+            resultvaluestring.c_str(), successvaluestring.c_str(),
+            errorvaluestring.c_str());
+  return string(tmp);
 }
+
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_mykotlin_MainActivity_stringFromJNI(JNIEnv *env,
@@ -83,8 +88,9 @@ Java_com_example_mykotlin_MainActivity_stringFromJNI(JNIEnv *env,
       s += "a";
     }
 
-    secureStorageWrite(env, "apple", "hello world "+s);
-    string ret = secureStorageRead(env, "apple");
+    secureStorageWriteBasic(env, "apple", "hello world "+s);
+    string ret = secureStorageReadBasic(env, "apple");
+
     return env->NewStringUTF(ret.c_str());
   } catch (std::string &e) {
     return env->NewStringUTF(e.c_str());
