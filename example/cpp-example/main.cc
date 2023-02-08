@@ -12,17 +12,23 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+using namespace org::defi_wallet_core;
+using namespace std;
+using namespace rust;
 
 int main(int argc, char *argv[]) {
   try {
-    org::defi_wallet_core::set_cronos_httpagent("cronos-wallet-cpp-example");
-    test_wallet();
-    chainmain_process();   // chain-main
-    test_chainmain_nft();  // chainmain nft tests
-    test_login();          // decentralized login
-    cronos_process();      // cronos
-    test_cronos_testnet(); // cronos testnet
-    test_interval();
+    // read env varialbe MYMNEMONICS
+    std::string mymnemonics = std::getenv("MYMNEMONICS");
+    rust::Box<Wallet> w2=restore_wallet_save_to_securestorage(mymnemonics,"", "myservice","myapp2");
+    rust::Box<Wallet> w=restore_wallet_load_from_securestorage("myservice","myapp2");
+    // get address from w
+    std::string myaddress = w->get_eth_address(0).c_str();
+    // print myaddress
+    std::cout<<"myaddress:"<<myaddress<<std::endl;
+
+
+    
   } catch (const rust::cxxbridge1::Error &e) {
     // Use `Assertion failed`, the same as `assert` function
     std::cout << "Assertion failed: " << e.what() << std::endl;

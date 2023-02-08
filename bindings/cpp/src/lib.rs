@@ -399,7 +399,6 @@ pub mod ffi {
         type U256 = crate::uint::ffi::U256;
     }
 
-    #[cfg(target_os = "android")]
     unsafe extern "C++" {
         include!("defi-wallet-core-cpp/include/android.h");
         fn secureStorageWrite(userkey: String, uservalue: String) -> i32;
@@ -753,40 +752,7 @@ fn restore_wallet(mnemonic: String, password: String) -> Result<Box<Wallet>> {
     Ok(Box::new(Wallet { wallet }))
 }
 
-#[cfg(not(target_os = "android"))]
-fn restore_wallet_save_to_securestorage(
-    mnemonic: String,
-    password: String,
-    servicename: String,
-    username: String,
-) -> Result<Box<Wallet>> {
-    let securestorageinfo = SecureStorageWaleltInfo {
-        mnemonic: mnemonic.clone(),
-        password: password.clone(),
-    };
 
-    let infojson = serde_json::to_string(&securestorageinfo)?;
-    let entry = keyring::Entry::new(&servicename, &username);
-    entry.set_password(&infojson)?;
-    let wallet = HDWallet::recover_wallet(mnemonic, Some(password))?;
-    Ok(Box::new(Wallet { wallet }))
-}
-
-#[cfg(not(target_os = "android"))]
-fn restore_wallet_load_from_securestorage(
-    servicename: String,
-    username: String,
-) -> Result<Box<Wallet>> {
-    let entry = keyring::Entry::new(&servicename, &username);
-
-    let infojson = entry.get_password()?;
-    let securestorageinfo: SecureStorageWaleltInfo = serde_json::from_str(&infojson)?;
-    let wallet =
-        HDWallet::recover_wallet(securestorageinfo.mnemonic, Some(securestorageinfo.password))?;
-    Ok(Box::new(Wallet { wallet }))
-}
-
-#[cfg(target_os = "android")]
 fn restore_wallet_save_to_securestorage(
     mnemonic: String,
     password: String,
@@ -801,7 +767,9 @@ fn restore_wallet_save_to_securestorage(
     let keyvalue = format!("{}_{}", servicename, username);
 
     let infojson = serde_json::to_string(&securestorageinfo)?;
-    let result = ffi::secureStorageWrite(keyvalue, infojson);
+    // convert infojson to hex
+    let infojsonhex = hex::encode(infojson);
+    let result = ffi::secureStorageWrite(keyvalue, infojsonhex);
     if result == 0  {
         return Err(anyhow!("Cannot save to secure storage"));
     }
@@ -809,7 +777,6 @@ fn restore_wallet_save_to_securestorage(
     Ok(Box::new(Wallet { wallet }))
 }
 
-#[cfg(target_os = "android")]
 fn restore_wallet_load_from_securestorage(
     servicename: String,
     username: String,
@@ -827,7 +794,9 @@ fn restore_wallet_load_from_securestorage(
             androidinfo.error
         ));
     }
-    let infojson = androidinfo.result;
+    let infojsonhex = androidinfo.result;
+    let infojsonarray = hex::decode(infojsonhex)?;
+    let infojson = String::from_utf8(infojsonarray)?;
     let securestorageinfo: SecureStorageWaleltInfo = serde_json::from_str(&infojson)?;
     let wallet =
         HDWallet::recover_wallet(securestorageinfo.mnemonic, Some(securestorageinfo.password))?;

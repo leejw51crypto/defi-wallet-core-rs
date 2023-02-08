@@ -1,66 +1,58 @@
-#include <jni.h>
+#include "rust/cxx.h"
 #include <string>
-#include "defi-wallet-core-cpp/include/android.h"
+#include <fstream>
+#include <iostream>
+
 #define SECURE_STORAGE_CLASS "com/cronos/play/SecureStorage"
 using namespace std;
 
+class JNIEnv {
+public:
+  JNIEnv() {}
+  ~JNIEnv() {}
+};
+
 JNIEnv *g_env = NULL;
+
 namespace org {
 namespace defi_wallet_core {
 
-int secureStorageSetJavaEnv(JNIEnv *userenv) {
-  g_env = userenv;
+int secureStorageWriteBasic(JNIEnv *env, string userkey, string uservalue) {
+
+  // open or createfile for overwrite, binary mode
+  ofstream file(userkey.c_str(), ios::out | ios::trunc | ios::binary);
+  if (!file.is_open()) {
+    return 0;
+  }
+  // convert to uservalue to char array, and write to file
+  file.write(uservalue.c_str(), uservalue.length());
   return 1;
 }
 
-int secureStorageWriteBasic(JNIEnv *env, string userkey, string uservalue) {
-
-  string secureStorageClass = SECURE_STORAGE_CLASS;
-  jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
-  jmethodID currentActivityThreadMethod =
-      env->GetStaticMethodID(activityThreadClass, "currentActivityThread",
-                             "()Landroid/app/ActivityThread;");
-  jobject activityThread = env->CallStaticObjectMethod(
-      activityThreadClass, currentActivityThreadMethod);
-  jmethodID getApplicationMethod = env->GetMethodID(
-      activityThreadClass, "getApplication", "()Landroid/app/Application;");
-  jobject context = env->CallObjectMethod(activityThread, getApplicationMethod);
-  jclass kotlinClass = env->FindClass(secureStorageClass.c_str());
-  jmethodID functionMethod = env->GetStaticMethodID(
-      kotlinClass, "writeSecureStorage",
-      "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)I");
-  jstring key = env->NewStringUTF(userkey.c_str());
-  jstring value = env->NewStringUTF(uservalue.c_str());
-  jint ret = env->CallStaticIntMethod(kotlinClass, functionMethod, context, key,
-                                      value);
-
-  return (int)ret;
-}
-
 string secureStorageReadBasic(JNIEnv *env, string userkey) {
+  char tmp[1000];
 
-  string secureStorageClass = SECURE_STORAGE_CLASS;
-  jclass activityThreadClass = env->FindClass("android/app/ActivityThread");
-  jmethodID currentActivityThreadMethod =
-      env->GetStaticMethodID(activityThreadClass, "currentActivityThread",
-                             "()Landroid/app/ActivityThread;");
-  jobject activityThread = env->CallStaticObjectMethod(
-      activityThreadClass, currentActivityThreadMethod);
-  jmethodID getApplicationMethod = env->GetMethodID(
-      activityThreadClass, "getApplication", "()Landroid/app/Application;");
-  jobject context = env->CallObjectMethod(activityThread, getApplicationMethod);
-  jclass kotlinClass = env->FindClass(secureStorageClass.c_str());
-  jmethodID functionMethod = env->GetStaticMethodID(
-      kotlinClass, "readSecureStorage",
-      "(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/String;");
+  ifstream file(userkey.c_str(), ios::in | ios::binary);
+  if (!file.is_open()) {
+    snprintf(tmp, sizeof(tmp),  "{\"result\":\"\",\"success\":\"0\",\"error\":\"encrypt file not found\"}");
+    return tmp;
+  }
 
-  jstring x = env->NewStringUTF(userkey.c_str());
-  jobject ret =
-      env->CallStaticObjectMethod(kotlinClass, functionMethod, context, x);
-  string retstring = string(env->GetStringUTFChars((jstring)ret, 0));
-
-  return retstring;
+  // read all bytes from file, and convert to string
+  file.seekg(0, ios::end);
+  int length = file.tellg();
+  file.seekg(0, ios::beg);
+  char *buffer = new char[length];
+  file.read(buffer, length);
+  string retstring(buffer, length); 
+  snprintf(tmp, sizeof(tmp), "{\"result\":\"%s\",\"success\":\"1\",\"error\":\"\"}",buffer);
+  // print tmp
+  std::cout<<"returning  =  "<<tmp<<std::endl;
+  //std::cout<<"returning  =  "<<tmp<<std::endl;;
+  return tmp;
 }
+
+
 
 int secureStorageWrite(rust::String userkey, rust::String uservalue) {
   try {
@@ -78,6 +70,7 @@ rust::String secureStorageRead(rust::String userkey) {
   try {
     JNIEnv *env = g_env;
     string ret = secureStorageReadBasic(env, userkey.c_str());
+    std::cout<<"read= "<< ret<< std::endl;
     return rust::String(ret.c_str());
   } catch (exception &e) {
     return rust::String(""); // fail
