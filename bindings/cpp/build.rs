@@ -24,6 +24,6 @@ fn main() {
     }
 
     println!("cargo:rerun-if-changed=src/nft.cc");
-        println!("cargo:rerun-if-changed=src/android.cc");
+    println!("cargo:rerun-if-changed=src/android.cc");
     println!("cargo:rerun-if-changed=include/nft.h");
 }
