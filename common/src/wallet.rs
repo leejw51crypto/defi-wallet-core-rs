@@ -262,7 +262,7 @@ impl SecretKey {
     /// constructs secret key from bytes
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, SecretKeyWrapError> {
         let signing_key =
-            SigningKey::from_bytes(&bytes).map_err(SecretKeyWrapError::InvalidBytes)?;
+            SigningKey::from_bytes(bytes.as_slice().into()).map_err(SecretKeyWrapError::InvalidBytes)?;
         Ok(Self(signing_key))
     }
 
@@ -282,7 +282,7 @@ impl SecretKey {
     pub fn eth_sign(&self, message: &[u8], chain_id: u64) -> Result<Signature, HdWrapError> {
         let hash = hash_message(message);
         let wallet = LocalWallet::from(self.get_signing_key()).with_chain_id(chain_id);
-        let signature = wallet.sign_hash(hash);
+        let signature = wallet.sign_hash(hash).unwrap();
         Ok(signature)
     }
 
@@ -292,18 +292,18 @@ impl SecretKey {
         let bhash: [u8; 32] = vhash.try_into().unwrap();
         let uhash: H256 = bhash.into();
         let wallet = LocalWallet::from(self.get_signing_key()).with_chain_id(chain_id);
-        let signature = wallet.sign_hash(uhash);
+        let signature = wallet.sign_hash(uhash).unwrap();
         Ok(signature)
     }
 
     /// gets public key to byte array
     pub fn get_public_key_bytes(&self) -> Vec<u8> {
-        self.0.clone().public_key().to_bytes().to_vec()
+        self.0.clone().public_key().to_sec1_bytes().to_vec()
     }
 
     /// gets public key to a hex string without the 0x prefix
     pub fn get_public_key_hex(&self) -> String {
-        hex::encode(self.0.clone().public_key().to_bytes())
+        hex::encode(self.0.clone().public_key().to_sec1_bytes())
     }
 
     /// converts private key to byte array
