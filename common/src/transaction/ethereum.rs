@@ -198,7 +198,7 @@ pub fn build_signed_eth_tx(
     }
     tx.set_chain_id(chain_id);
     let wallet = LocalWallet::from(secret_key.get_signing_key()).with_chain_id(chain_id);
-    let sig: Signature = wallet.sign_transaction_sync(&tx);
+    let sig: Signature = wallet.sign_transaction_sync(&tx).unwrap();
     let signed_tx = &tx.rlp_signed(&sig);
     Ok(signed_tx.to_vec())
 }
@@ -360,7 +360,7 @@ pub fn eth_sign_transaction(
         default_chain_id = type_tx.chain_id().unwrap().as_u64();
     }
     let wallet = LocalWallet::from(secret_key.get_signing_key()).with_chain_id(default_chain_id);
-    let sig = wallet.sign_transaction_sync(&type_tx);
+    let sig = wallet.sign_transaction_sync(&type_tx).unwrap();
     let signed_tx = &type_tx.rlp_signed(&sig);
     Ok(signed_tx.to_vec())
 }
@@ -378,7 +378,7 @@ pub fn eth_sign_transaction_with_chainid(
     let type_tx: TypedTransaction = tx.to_type_tx();
 
     let wallet = LocalWallet::from(secret_key.get_signing_key()).with_chain_id(chain_id);
-    let sig = wallet.sign_transaction_sync(&type_tx);
+    let sig = wallet.sign_transaction_sync(&type_tx).unwrap();
     let signed_tx = &type_tx.rlp_signed(&sig);
     Ok(signed_tx.to_vec())
 }
