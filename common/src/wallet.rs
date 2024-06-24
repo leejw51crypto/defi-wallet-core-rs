@@ -7,7 +7,7 @@ use ethers::core::k256::ecdsa;
 use ethers::prelude::{LocalWallet, Signature, Signer, H256};
 use ethers::utils::hex::{self, FromHexError, ToHex};
 use ethers::utils::{hash_message, secret_key_to_address};
-use ethers_core::k256::ecdsa::SigningKey as EthSigningKey;
+use ethers::core::k256::ecdsa::SigningKey as EthSigningKey;
 use rand_core::{OsRng, RngCore};
 use secrecy::{ExposeSecret, SecretString, Zeroize};
 use std::str::FromStr;
