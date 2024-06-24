@@ -128,7 +128,7 @@ pub fn simulate_blocking(grpc_url: &str, tx: Vec<u8>) -> Result<u64, RestError> 
     let result = rt.block_on(async move {
         let mut client = ServiceClient::connect(grpc_url.to_owned())
             .await
-            .map_err(RestError::GRPCTransportError)?;
+            .map_err(|e| RestError::MissingResult)?;
         let request = SimulateRequest {
             tx_bytes: tx,
             ..Default::default()
@@ -136,7 +136,7 @@ pub fn simulate_blocking(grpc_url: &str, tx: Vec<u8>) -> Result<u64, RestError> 
         let res = client
             .simulate(request)
             .await
-            .map_err(RestError::GRPCError)?;
+            .map_err(|e| RestError::MissingResult)?;
         res.into_inner().gas_info.ok_or(RestError::MissingResult)
     })?;
     Ok(result.gas_used)
@@ -198,12 +198,14 @@ fn get_denom_metadata_blocking(grpc_url: &str, denom: String) -> Result<DenomMet
     let result = rt.block_on(async move {
         let mut client = QueryClient::connect(grpc_url.to_owned())
             .await
-            .map_err(RestError::GRPCTransportError)?;
+            //.map_err(RestError::GRPCTransportError)?;
+            .map_err(|e| RestError::MissingResult)?;
         let request = QueryDenomMetadataRequest { denom };
         let res = client
             .denom_metadata(request)
             .await
-            .map_err(RestError::GRPCError)?;
+            .map_err(|e| RestError::MissingResult)?;
+        
         res.into_inner().metadata.ok_or(RestError::MissingResult)
     })?;
     Ok(result.into())

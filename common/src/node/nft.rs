@@ -1,7 +1,8 @@
+use tonic::Status;
 // FIXME:
 // It seems to be a `cargo-clippy` issue of Rust `1.61.0`.
 // https://github.com/influxdata/influxdb_iox/commit/b2279fae3984a29e73a7070d0b99ae24675eb606
-#![allow(clippy::await_holding_lock)]
+//#![allow(clippy::await_holding_lock)]
 
 use super::error::RestError;
 use crate::proto;
@@ -29,7 +30,8 @@ pub struct Client {
 impl Client {
     #[cfg(target_arch = "wasm32")]
     pub fn new(grpc_web_url: String) -> Self {
-        let client = QueryClient::new(tonic_web_wasm_client::Client::new(grpc_web_url));
+        let clientcore=tonic_web_wasm_client::Client::new(grpc_web_url);
+        let client = QueryClient::new(clientcore);
         Self { client }
     }
     #[cfg(not(target_arch = "wasm32"))]

@@ -55,7 +55,7 @@ pub fn get_account_balance_blocking(
         .block_on(async move {
             let mut client = QueryClient::connect(grpc_url.to_string())
                 .await
-                .map_err(RestError::GRPCTransportError)?;
+                .map_err(|e|RestError::MissingResult)?;
             let request = QueryBalanceRequest {
                 address: address.to_string(),
                 denom: denom.to_string(),
@@ -63,7 +63,7 @@ pub fn get_account_balance_blocking(
             Ok(client
                 .balance(request)
                 .await
-                .map_err(RestError::GRPCError)?
+                .map_err(|e|RestError::MissingResult)?
                 .into_inner()
                 .into())
         })
