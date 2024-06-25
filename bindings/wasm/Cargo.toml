@@ -29,7 +29,7 @@ wasm-bindgen = "0.2"
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1", optional = true }
-cosmos-sdk-proto = { git = "https://github.com/crypto-com/cosmos-rust.git", default-features = false, features = ["cosmwasm"] }
+cosmos-sdk-proto = { git = "https://github.com/leejw51crypto/cosmos-rust.git", branch="cronos",default-features = false, features = ["cosmwasm"] }
 
 tendermint = "0.29"
 async-std = "1.12.0"
@@ -40,4 +40,4 @@ ethers = {  git="https://github.com/leejw51crypto/ethers-rs.git", branch="cronos
 wasm-timer = "0.2"
 tendermint-rpc = "0.29"
 defi-wallet-core-proto = { version = "0.1", path = "../../proto" }
-tonic-web-wasm-client = "0.3"
+tonic-web-wasm-client = {git="https://github.com/leejw51crypto/tonic-web-wasm-client.git", branch="cronos"}
